@@ -89,11 +89,10 @@ def show():
     )
     st.caption(f"Menampilkan {len(df_show):,} barang")
 
-    # ── 4. Ringkasan Eksekutif & Rekomendasi (DIPINDAHKAN KE SINI) ────
+    # ── 4. Ringkasan Eksekutif & Rekomendasi ─────────────────────────
     st.markdown("---")
     st.markdown("<div class='section-title'>📝 Ringkasan Eksekutif & Rekomendasi</div>", unsafe_allow_html=True)
-    st.caption("Narasi skenario dan strategi pengelolaan produk berdasarkan karakteristik masing-masing cluster.")
-
+    
     REKOMENDASI = {
         "Laris": ["Prioritaskan ketersediaan stok.", "Jadikan produk sebagai fokus pemasaran.", "Pertahankan kualitas produk dan layanan."],
         "Sedang": ["Pertahankan performa penjualan yang stabil.", "Lakukan promosi secara berkala.", "Pantau perkembangan permintaan pasar."],
@@ -104,16 +103,17 @@ def show():
         kategori = row['Kategori']
         c = colors.get(kategori, "#3498db")
         poin = REKOMENDASI.get(kategori, ["Pantau perkembangan berkala."])
-        list_html = "".join([f"<li style='margin-bottom:4px; color:#ffffff;'>{p}</li>" for p in poin])
+        list_html = "".join([f"<li style='margin-bottom:4px; color:#000000;'>{p}</li>" for p in poin])
+        
         st.markdown(f"""
-        <div style='background:rgba(255,255,255,0.05); border-left:4px solid {c};
+        <div style='background:#ffffff; border-left:4px solid {c};
                     border-radius:10px; padding:14px 18px; margin-bottom:12px;'>
             <div style='font-weight:700; color:{c}; font-size:1.05rem;'>
-                {kategori} &nbsp;<span style='color:#bdc3c7; font-size:0.8rem; font-weight:400;'>
+                {kategori} &nbsp;<span style='color:#555555; font-size:0.8rem; font-weight:400;'>
                 ({int(row['Jumlah_Barang'])} produk)</span>
             </div>
-            <div style='color:#ffffff; font-size:0.9rem; margin-top:8px;'>
-                <b>Rekomendasi:</b>
+            <div style='color:#000000; font-size:0.9rem; margin-top:8px;'>
+                <b style='color:#000000;'>Rekomendasi:</b>
                 <ul style='margin:6px 0 0 18px; padding:0;'>{list_html}</ul>
             </div>
         </div>
@@ -122,7 +122,6 @@ def show():
     # ── 5. Jarak Euclidean ───────────────────────────────────────────
     st.markdown("---")
     st.markdown("<div class='section-title'>📐 Jarak Euclidean ke Centroid</div>", unsafe_allow_html=True)
-    st.caption("Semakin kecil jarak, semakin representatif barang tersebut terhadap centroid clusternya.")
     st.dataframe(df_distances.head(50), use_container_width=True)
 
     # ── 6. Download CSV ──────────────────────────────────────────────
