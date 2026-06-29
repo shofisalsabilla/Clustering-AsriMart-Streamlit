@@ -41,7 +41,7 @@ def show():
     with col_graph:
         wcss = state.get("wcss")
         if wcss:
-            fig, ax = plt.subplots(figsize=(6, 2.5))
+            fig, ax = plt.subplots(figsize=(9, 4))
             fig.patch.set_facecolor('#0d1b2a')
             ax.set_facecolor('#0d1b2a')
 
