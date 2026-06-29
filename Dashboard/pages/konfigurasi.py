@@ -62,17 +62,17 @@ def show():
             st.pyplot(fig)
             plt.close(fig)
 
-            # Menambahkan narasi penjelasan
+    # Menambahkan narasi penjelasan
             st.markdown("""
             <div style='background-color:rgba(79, 195, 247, 0.1); padding: 10px; border-radius: 8px; border-left: 3px solid #4fc3f7;'>
                 <p style='font-size: 0.85rem; color: #e1e1e1; margin: 0;'>
                     <strong>Cara membaca grafik:</strong> Metode Elbow menunjukkan titik di mana penurunan 
                     nilai SSE (Inertia) mulai melambat secara signifikan, membentuk sudut seperti <strong>"siku"</strong>. 
-                    Nilai k pada titik siku tersebut sering dianggap sebagai jumlah cluster yang optimal untuk data Anda.
+                    Nilai k pada titik siku tersebut dianggap sebagai jumlah cluster yang optimal untuk data tersebut.
                 </p>
             </div>
             """, unsafe_allow_html=True)
-
+    
     # Konfigurasi k
     st.markdown("---")
     st.markdown("<div class='section-title'>🎛️ Pilih Jumlah Cluster (k)</div>", unsafe_allow_html=True)
