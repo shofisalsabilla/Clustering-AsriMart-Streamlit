@@ -4,7 +4,6 @@ import matplotlib
 matplotlib.use("Agg")
 from utils import state, clustering
 
-
 def show():
     state.init_state()
 
@@ -35,7 +34,8 @@ def show():
 
     wcss = state.get("wcss")
     if wcss:
-        fig, ax = plt.subplots(figsize=(9, 4))
+        # Grafik diperkecil dengan figsize=(7, 3)
+        fig, ax = plt.subplots(figsize=(7, 3))
         fig.patch.set_facecolor('#0d1b2a')
         ax.set_facecolor('#0d1b2a')
 
@@ -43,10 +43,10 @@ def show():
         ax.plot(K, wcss, marker='o', linestyle='--', color='#4fc3f7', linewidth=2, markersize=8)
         ax.fill_between(K, wcss, alpha=0.1, color='#4fc3f7')
 
-        ax.set_xlabel('Jumlah Cluster (k)', color='#b0c4de')
-        ax.set_ylabel('SSE (Inertia)', color='#b0c4de')
-        ax.set_title('Grafik Metode Elbow', color='white', fontsize=13, fontweight='bold')
-        ax.tick_params(colors='#b0c4de')
+        ax.set_xlabel('Jumlah Cluster (k)', color='#b0c4de', fontsize=9)
+        ax.set_ylabel('SSE (Inertia)', color='#b0c4de', fontsize=9)
+        ax.set_title('Grafik Metode Elbow', color='white', fontsize=11, fontweight='bold')
+        ax.tick_params(colors='#b0c4de', labelsize=8)
         ax.spines[['top', 'right']].set_visible(False)
         ax.spines[['bottom', 'left']].set_color('#2a4a7f')
         ax.grid(True, linestyle='--', alpha=0.3, color='#4a6080')
