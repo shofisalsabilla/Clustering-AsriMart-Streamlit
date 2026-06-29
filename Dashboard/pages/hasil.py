@@ -96,26 +96,6 @@ def show():
     st.caption("Semakin kecil jarak, semakin representatif barang tersebut terhadap centroid clusternya.")
     st.dataframe(df_distances.head(50), use_container_width=True)
 
-    # ── 5. Ringkasan Eksekutif ───────────────────────────────────────
-    st.markdown("---")
-    st.markdown("<div class='section-title'>📊 Ringkasan Eksekutif</div>", unsafe_allow_html=True)
-
-    col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Total Barang", f"{len(df_agg):,}")
-    col2.metric("Jumlah Cluster", n_clusters)
-    col3.metric("Silhouette Score", f"{sil:.4f}")
-    col4.metric("Total Qty Keseluruhan", f"{int(df_agg['Qty_2022_2025'].sum()):,}")
-
-    if sil >= 0.7:
-        quality = "🟢 Sangat Baik (≥0.70)"
-    elif sil >= 0.5:
-        quality = "🟡 Baik (0.50–0.69)"
-    elif sil >= 0.25:
-        quality = "🟠 Cukup (0.25–0.49)"
-    else:
-        quality = "🔴 Kurang Baik (<0.25)"
-    st.markdown(f"**Kualitas Clustering:** {quality}")
-
     # ── 6. Download CSV ──────────────────────────────────────────────
     st.markdown("---")
     st.markdown("<div class='section-title'>⬇️ Unduh Laporan</div>", unsafe_allow_html=True)
