@@ -28,8 +28,6 @@ def show():
     label_map    = state.get("cluster_labels")
 
     df_full = df_clustered.merge(df_agg, on='Nama Barang', suffixes=('_norm', ''))
-    
-    # Perhitungan Summary
     summary = df_full.groupby('Kategori').agg(
         Jumlah_Barang=('Nama Barang', 'count'),
         Rata_Qty=('Qty_2022_2025', 'mean'),
@@ -43,8 +41,9 @@ def show():
     with col_kiri:
         st.markdown("<div class='section-title'>📌 Ringkasan Cluster</div>", unsafe_allow_html=True)
         colors = {"Laris": "#27ae60", "Sedang": "#f39c12", "Kurang Laris": "#e74c3c"}
-        cols = st.columns(len(summary))
-        for col, (_, row) in zip(cols, summary.iterrows()):
+        # Menampilkan summary dalam layout grid
+        cols_grid = st.columns(len(summary))
+        for col, (_, row) in zip(cols_grid, summary.iterrows()):
             c = colors.get(row['Kategori'], "#3498db")
             col.markdown(f"""
             <div style='background:rgba(255,255,255,0.04); border:1px solid {c};
@@ -80,9 +79,9 @@ def show():
     with col_rek:
         st.markdown("<div class='section-title'>📝 Ringkasan Eksekutif & Strategi</div>", unsafe_allow_html=True)
         REKOMENDASI = {
-            "Laris": ["Prioritaskan ketersediaan stok.", "Jadikan produk sebagai fokus pemasaran.", "Pertahankan kualitas produk dan layanan."],
-            "Sedang": ["Pertahankan performa penjualan yang stabil.", "Lakukan promosi secara berkala.", "Pantau perkembangan permintaan pasar."],
-            "Kurang Laris": ["Tingkatkan promosi untuk mendorong minat beli.", "Evaluasi strategi pemasaran dan penempatan produk.", "Pantau penjualan secara berkala."],
+            "Cluster 1 = Laris": ["Prioritaskan ketersediaan stok.", "Jadikan produk sebagai fokus pemasaran.", "Pertahankan kualitas produk dan layanan."],
+            "Cluster 2 = Sedang": ["Pertahankan performa penjualan yang stabil.", "Lakukan promosi secara berkala.", "Pantau perkembangan permintaan pasar."],
+            "Cluster 0 = Kurang Laris": ["Tingkatkan promosi untuk mendorong minat beli.", "Evaluasi strategi pemasaran dan penempatan produk.", "Pantau penjualan secara berkala."],
         }
         for _, row in summary.sort_values('Jumlah_Barang', ascending=False).iterrows():
             kategori = row['Kategori']
