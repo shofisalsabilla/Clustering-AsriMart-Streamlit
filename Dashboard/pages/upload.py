@@ -100,15 +100,19 @@ def show():
 
     with col_agregasi:
         st.markdown("<div class='section-title'>📊 Data Agregasi</div>", unsafe_allow_html=True)
-        st.metric("Total Barang Unik", len(df_agg))
-        st.metric("Total Qty Keseluruhan", f"{int(df_agg['Qty_2022_2025'].sum()):,}")
+        
+        # Samping-menyampingkan metrik
+        sub_col1, sub_col2 = st.columns(2)
+        sub_col1.metric("Total Barang Unik", len(df_agg))
+        sub_col2.metric("Total Qty", f"{int(df_agg['Qty_2022_2025'].sum()):,}")
+        
         st.markdown(f"**{len(df_agg):,} jenis barang** setelah agregasi")
         st.dataframe(df_agg, use_container_width=True)
 
     with col_normalisasi:
         st.markdown("<div class='section-title'>📐 Data Normalisasi</div>", unsafe_allow_html=True)
         st.markdown("Data setelah **Min-Max Normalisasi** (skala 0–1)")
-        # Tambahkan jarak vertikal agar sejajar dengan tabel sebelah
+        # Memberikan spasi agar visual tabel sejajar
         st.write("") 
         st.write("")
         st.write("")
