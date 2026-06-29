@@ -33,25 +33,28 @@ def show():
     col_a, col_b = st.columns([1.5, 1])
     
     with col_a:
-        st.markdown("<div class='section-title'>📌 Ringkasan Cluster</div>", unsafe_allow_html=True)
-        summary = df_full.groupby('Kategori').agg(
-            Jumlah_Barang=('Nama Barang', 'count'),
-            Rata_Qty=('Qty_2022_2025', 'mean'),
-            Min_Qty=('Qty_2022_2025', 'min'),
-            Max_Qty=('Qty_2022_2025', 'max'),
-        ).reset_index().sort_values('Rata_Qty')
-
-        colors = {"Laris": "#27ae60", "Sedang": "#f39c12", "Kurang Laris": "#e74c3c"}
-        cols = st.columns(len(summary))
-        for col, (_, row) in zip(cols, summary.iterrows()):
-            c = colors.get(row['Kategori'], "#3498db")
-            col.markdown(f"""
-            <div style='background:rgba(255,255,255,0.04); border:1px solid {c};
-                        border-radius:12px; padding:10px; text-align:center;'>
-                <div style='font-size:1.5rem; font-weight:800; color:{c};'>{row['Jumlah_Barang']}</div>
-                <div style='font-weight:700; color:{c}; font-size:0.8rem;'>{row['Kategori']}</div>
+       st.markdown("<div class='section-title'>📌 Ringkasan Cluster</div>", unsafe_allow_html=True)
+    summary = df_full.groupby('Kategori').agg(
+        Jumlah_Barang=('Nama Barang', 'count'),
+        Rata_Qty=('Qty_2022_2025', 'mean'),
+        Min_Qty=('Qty_2022_2025', 'min'),
+        Max_Qty=('Qty_2022_2025', 'max'),
+    ).reset_index().sort_values('Rata_Qty')
+    colors = {"Laris": "#27ae60", "Sedang": "#f39c12", "Kurang Laris": "#e74c3c"}
+    cols = st.columns(len(summary))
+    for col, (_, row) in zip(cols, summary.iterrows()):
+        c = colors.get(row['Kategori'], "#3498db")
+        col.markdown(f"""
+        <div style='background:rgba(255,255,255,0.04); border:1px solid {c};
+                    border-radius:12px; padding:16px; text-align:center;'>
+            <div style='font-size:2rem; font-weight:800; color:{c};'>{row['Jumlah_Barang']}</div>
+            <div style='font-weight:700; color:{c}; font-size:1rem;'>{row['Kategori']}</div>
+            <div style='color:#bdc3c7; font-size:0.78rem; margin-top:6px;'>
+                Avg: {row['Rata_Qty']:,.0f}<br>
+                Min: {row['Min_Qty']:,.0f} | Max: {row['Max_Qty']:,.0f}
             </div>
-            """, unsafe_allow_html=True)
+        </div>
+        """, unsafe_allow_html=True)
 
     with col_b:
         st.markdown("<div class='section-title'>🎯 Posisi Centroid</div>", unsafe_allow_html=True)
