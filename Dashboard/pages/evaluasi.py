@@ -43,29 +43,28 @@ def show():
     c1, c2 = st.columns(2)
 
     with c1:
-        def pca_plot():
-            X = df_clustered[['Qty_2022_2025']]
-            scaler_std = StandardScaler()
-            X_scaled = scaler_std.fit_transform(X)
-            X_fake = np.hstack([X_scaled, X_scaled + np.random.normal(0, 0.01, X_scaled.shape)])
-            pca = PCA(n_components=2)
-            X_pca = pca.fit_transform(X_fake)
-            df_pca = pd.DataFrame(X_pca, columns=['PC1', 'PC2'])
-            df_pca['Kategori'] = df_clustered['Kategori'].values
-            
-            centroids = model.cluster_centers_
-            c_scaled = scaler_std.transform(centroids)
-            c_fake = np.hstack([c_scaled, c_scaled])
-            c_pca = pca.transform(c_fake)
-            
-            fig, ax = plt.subplots(figsize=(8, 5))
-            fig.patch.set_facecolor('#0d1b2a'); ax.set_facecolor('#0d1b2a')
-            for i, cat in enumerate(df_pca['Kategori'].unique()):
-                mask = df_pca['Kategori'] == cat
-                ax.scatter(df_pca.loc[mask, 'PC1'], df_pca.loc[mask, 'PC2'], label=cat, alpha=0.6)
-            ax.scatter(c_pca[:, 0], c_pca[:, 1], c='white', marker='X', s=200, label='Centroid')
-            ax.tick_params(colors='#b0c4de'); ax.grid(True, linestyle='--', alpha=0.2)
-            st.pyplot(fig); plt.close(fig)
+        st.markdown("<div class='section-title'>🔵 Scatter Plot PCA</div>", unsafe_allow_html=True)
+        X = df_clustered[['Qty_2022_2025']]
+        scaler_std = StandardScaler()
+        X_scaled = scaler_std.fit_transform(X)
+        X_fake = np.hstack([X_scaled, X_scaled + np.random.normal(0, 0.01, X_scaled.shape)])
+        pca = PCA(n_components=2)
+        X_pca = pca.fit_transform(X_fake)
+        df_pca = pd.DataFrame(X_pca, columns=['PC1', 'PC2'])
+        df_pca['Kategori'] = df_clustered['Kategori'].values
+        centroids = model.cluster_centers_
+        c_scaled = scaler_std.transform(centroids)
+        c_fake = np.hstack([c_scaled, c_scaled])
+        c_pca = pca.transform(c_fake)
+        
+        fig, ax = plt.subplots(figsize=FIGSIZE)
+        fig.patch.set_facecolor('#0d1b2a'); ax.set_facecolor('#0d1b2a')
+        for i, cat in enumerate(df_pca['Kategori'].unique()):
+            mask = df_pca['Kategori'] == cat
+            ax.scatter(df_pca.loc[mask, 'PC1'], df_pca.loc[mask, 'PC2'], color=PALETTE[i % len(PALETTE)], label=cat, alpha=0.7, s=60)
+        ax.scatter(c_pca[:, 0], c_pca[:, 1], c='white', s=250, marker='X', edgecolors='black', label='Centroid', zorder=5)
+        ax.tick_params(colors='#b0c4de'); ax.grid(True, linestyle='--', alpha=0.3, color='#4a6080')
+        st.pyplot(fig); plt.close(fig)
 
         plot_container("🔵 Scatter Plot PCA", 
                        "Visualisasi ini menunjukkan pemisahan antar cluster dalam ruang 2D. Semakin jauh jarak antar kelompok, semakin baik kualitas segmentasi data Anda.", 
