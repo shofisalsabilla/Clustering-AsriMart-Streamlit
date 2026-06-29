@@ -89,12 +89,12 @@ def show():
     )
     st.caption(f"Menampilkan {len(df_show):,} barang")
 
-    # ── 4. Ringkasan Eksekutif & Strategi ────
+    # ── 4. Ringkasan Eksekutif & Rekomendasi (DIPINDAHKAN KE SINI) ────
     st.markdown("---")
     st.markdown("<div class='section-title'>📝 Ringkasan Eksekutif & Rekomendasi</div>", unsafe_allow_html=True)
     st.caption("Narasi skenario dan strategi pengelolaan produk berdasarkan karakteristik masing-masing cluster.")
 
-    STRATEGI = {
+    REKOMENDASI = {
         "Laris": ["Prioritaskan ketersediaan stok.", "Jadikan produk sebagai fokus pemasaran.", "Pertahankan kualitas produk dan layanan."],
         "Sedang": ["Pertahankan performa penjualan yang stabil.", "Lakukan promosi secara berkala.", "Pantau perkembangan permintaan pasar."],
         "Kurang Laris": ["Tingkatkan promosi untuk mendorong minat beli.", "Evaluasi strategi pemasaran dan penempatan produk.", "Pantau penjualan secara berkala."],
