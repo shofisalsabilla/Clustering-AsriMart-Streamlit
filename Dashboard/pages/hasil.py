@@ -28,6 +28,8 @@ def show():
     label_map    = state.get("cluster_labels")
 
     df_full = df_clustered.merge(df_agg, on='Nama Barang', suffixes=('_norm', ''))
+    
+    # Perhitungan Summary
     summary = df_full.groupby('Kategori').agg(
         Jumlah_Barang=('Nama Barang', 'count'),
         Rata_Qty=('Qty_2022_2025', 'mean'),
@@ -76,7 +78,7 @@ def show():
         st.caption(f"Menampilkan {len(df_show):,} barang")
 
     with col_rek:
-        st.markdown("<div class='section-title'>📝 Ringkasan Eksekutif & Strategii</div>", unsafe_allow_html=True)
+        st.markdown("<div class='section-title'>📝 Ringkasan Eksekutif & Strategi</div>", unsafe_allow_html=True)
         REKOMENDASI = {
             "Laris": ["Prioritaskan ketersediaan stok.", "Jadikan produk sebagai fokus pemasaran.", "Pertahankan kualitas produk dan layanan."],
             "Sedang": ["Pertahankan performa penjualan yang stabil.", "Lakukan promosi secara berkala.", "Pantau perkembangan permintaan pasar."],
