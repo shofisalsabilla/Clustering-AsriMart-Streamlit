@@ -110,10 +110,9 @@ def show():
     with col_normalisasi:
         st.markdown("<div class='section-title'>📐 Data Normalisasi</div>", unsafe_allow_html=True)
         st.markdown("Data setelah **Min-Max Normalisasi** (skala 0–1)")
-        # Memberikan spasi agar visual tabel sejajar secara estetika
-        st.write("") 
-        st.write("")
-        st.write("")
+        # Penyesuaian spasi agar sejajar dengan bagian atas tabel agregasi
+        for _ in range(6):
+            st.write("") 
         st.dataframe(df_scaled, use_container_width=True)
 
     st.markdown("---")
