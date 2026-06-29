@@ -1,105 +1,118 @@
 import streamlit as st
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
-import seaborn as sns
-import numpy as np
 import pandas as pd
-from sklearn.decomposition import PCA
-from sklearn.preprocessing import StandardScaler
+from datetime import datetime
 from utils import state
-
-PALETTE = ["#e74c3c", "#f39c12", "#27ae60", "#3498db", "#9b59b6",
-           "#1abc9c", "#e67e22", "#2980b9", "#8e44ad", "#16a085"]
 
 def show():
     state.init_state()
 
     st.markdown("""
     <div class='main-header'>
-        <h2 style='margin:0; color:white;'>📉 Evaluasi & Visualisasi</h2>
+        <h2 style='margin:0; color:white;'>📊 Hasil Clustering</h2>
+        <p style='margin:4px 0 0; color:#b0c4de; font-size:0.9rem;'>
+            Tabel pengelompokan barang, centroid, jarak Euclidean, dan laporan lengkap
+        </p>
     </div>
     """, unsafe_allow_html=True)
 
     if not state.get("cluster_done"):
-        st.warning("⚠️ Harap selesaikan **Konfigurasi Clustering** terlebih dahulu.")
+        st.warning("⚠️ Harap selesaikan **Konfigurasi Clustering** dan jalankan K-Means terlebih dahulu.")
         return
 
     df_clustered = state.get("df_clustered")
-    df_agg = state.get("df_agg")
-    model = state.get("kmeans_model")
-    sil = state.get("silhouette_score")
+    df_distances = state.get("df_distances")
+    model        = state.get("kmeans_model")
+    df_agg       = state.get("df_agg")
+    sil          = state.get("silhouette_score")
+    n_clusters   = state.get("n_clusters")
+    label_map    = state.get("cluster_labels")
 
-    # Silhouette Score
-    st.markdown("<div class='section-title'>📏 Evaluasi Silhouette Score</div>", unsafe_allow_html=True)
-    col1, col2, col3 = st.columns(3)
-    col1.metric("Silhouette Score", f"{sil:.4f}")
-    col2.metric("Jumlah Cluster", state.get("n_clusters"))
-    col3.metric("Total Barang", len(df_clustered))
+    df_full = df_clustered.merge(df_agg, on='Nama Barang', suffixes=('_norm', ''))
+    summary = df_full.groupby('Kategori').agg(
+        Jumlah_Barang=('Nama Barang', 'count'),
+        Rata_Qty=('Qty_2022_2025', 'mean'),
+        Min_Qty=('Qty_2022_2025', 'min'),
+        Max_Qty=('Qty_2022_2025', 'max'),
+    ).reset_index().sort_values('Rata_Qty')
+
+    # ── 1 & 2. Ringkasan Cluster & Centroid (SEJAJAR) ─────────
+    col_kiri, col_kanan = st.columns([2, 1])
+    
+    with col_kiri:
+        st.markdown("<div class='section-title'>📌 Ringkasan Cluster</div>", unsafe_allow_html=True)
+        colors = {"Laris": "#27ae60", "Sedang": "#f39c12", "Kurang Laris": "#e74c3c"}
+        # Menampilkan summary dalam layout grid
+        cols_grid = st.columns(len(summary))
+        for col, (_, row) in zip(cols_grid, summary.iterrows()):
+            c = colors.get(row['Kategori'], "#3498db")
+            col.markdown(f"""
+            <div style='background:rgba(255,255,255,0.04); border:1px solid {c};
+                        border-radius:12px; padding:16px; text-align:center;'>
+                <div style='font-size:2rem; font-weight:800; color:{c};'>{row['Jumlah_Barang']}</div>
+                <div style='font-weight:700; color:{c}; font-size:1rem;'>{row['Kategori']}</div>
+            </div>
+            """, unsafe_allow_html=True)
+
+    with col_kanan:
+        st.markdown("<div class='section-title'>🎯 Posisi Centroid</div>", unsafe_allow_html=True)
+        centroid_data = []
+        df_means = df_clustered.groupby('Cluster')['Qty_2022_2025'].mean().sort_values()
+        for cid, _ in df_means.items():
+            centroid_val = model.cluster_centers_[cid][0]
+            centroid_data.append({"Cluster ID": cid, "Kategori": label_map.get(cid, f"Cluster {cid}"), "Centroid": round(centroid_val, 6)})
+        st.table(pd.DataFrame(centroid_data))
+
+    # ── 3 & 4. Tabel Hasil & Rekomendasi (SEJAJAR) ─────────
     st.markdown("---")
+    col_tabel, col_rek = st.columns([2, 1])
 
-    # 1. Scatter Plot PCA & Bar Chart Rata-rata Qty
-    st.markdown("<div class='section-title'>🔵 Scatter Plot & Perbandingan Rata-rata</div>", unsafe_allow_html=True)
-    c1, c2 = st.columns(2)
+    with col_tabel:
+        st.markdown("<div class='section-title'>📋 Tabel Hasil Pengelompokan</div>", unsafe_allow_html=True)
+        all_cats = ["Semua"] + list(df_clustered['Kategori'].unique())
+        selected_cat = st.selectbox("Filter Kategori:", all_cats, key="hasil_filter")
+        df_show = df_full[['Nama Barang', 'Qty_2022_2025', 'Cluster', 'Kategori']].copy()
+        df_show.rename(columns={'Qty_2022_2025': 'Total Qty (Asli)'}, inplace=True)
+        if selected_cat != "Semua": df_show = df_show[df_show['Kategori'] == selected_cat]
+        st.dataframe(df_show.sort_values('Total Qty (Asli)', ascending=False).reset_index(drop=True), use_container_width=True, height=400)
+        st.caption(f"Menampilkan {len(df_show):,} barang")
 
-    with c1:
-        # Scatter Plot PCA
-        X = df_clustered[['Qty_2022_2025']]
-        scaler_std = StandardScaler()
-        X_scaled = scaler_std.fit_transform(X)
-        X_fake = np.hstack([X_scaled, X_scaled + np.random.normal(0, 0.01, X_scaled.shape)])
-        pca = PCA(n_components=2)
-        X_pca = pca.fit_transform(X_fake)
-        df_pca = pd.DataFrame(X_pca, columns=['PC1', 'PC2'])
-        df_pca['Kategori'] = df_clustered['Kategori'].values
-        
-        fig, ax = plt.subplots(figsize=(6, 4))
-        fig.patch.set_facecolor('#0d1b2a')
-        ax.set_facecolor('#0d1b2a')
-        for i, cat in enumerate(df_pca['Kategori'].unique()):
-            mask = df_pca['Kategori'] == cat
-            ax.scatter(df_pca.loc[mask, 'PC1'], df_pca.loc[mask, 'PC2'], label=cat, alpha=0.6)
-        ax.set_title('Visualisasi Clustering PCA', color='white')
-        st.pyplot(fig)
-        st.caption("Narasi: Grafik ini menunjukkan pemisahan antar cluster dalam ruang 2D. Cluster yang terpisah dengan jelas menandakan kualitas segmentasi yang baik.")
+    with col_rek:
+        st.markdown("<div class='section-title'>📝 Ringkasan Eksekutif & Strategi</div>", unsafe_allow_html=True)
+        REKOMENDASI = {
+            "Laris": ["Prioritaskan ketersediaan stok.", "Jadikan produk sebagai fokus pemasaran.", "Pertahankan kualitas produk dan layanan."],
+            "Sedang": ["Pertahankan performa penjualan yang stabil.", "Lakukan promosi secara berkala.", "Pantau perkembangan permintaan pasar."],
+            "Kurang Laris": ["Tingkatkan promosi untuk mendorong minat beli.", "Evaluasi strategi pemasaran dan penempatan produk.", "Pantau penjualan secara berkala."],
+        }
+        for _, row in summary.sort_values('Jumlah_Barang', ascending=False).iterrows():
+            kategori = row['Kategori']
+            c = colors.get(kategori, "#3498db")
+            poin = REKOMENDASI.get(kategori, ["Pantau perkembangan berkala."])
+            list_html = "".join([f"<li style='margin-bottom:4px; color:#000000;'>{p}</li>" for p in poin])
+            st.markdown(f"""
+            <div style='background:#ffffff; border-left:4px solid {c}; border-radius:10px; padding:14px 18px; margin-bottom:12px;'>
+                <div style='font-weight:700; color:{c}; font-size:1.05rem;'>{kategori}</div>
+                <div style='color:#000000; font-size:0.9rem; margin-top:8px;'>
+                    <ul style='margin:6px 0 0 18px; padding:0;'>{list_html}</ul>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
 
-    with c2:
-        # Bar Chart Rata-rata Qty
-        df_full = df_clustered.merge(df_agg, on='Nama Barang', suffixes=('_norm', ''))
-        summary = df_full.groupby('Kategori')['Qty_2022_2025'].mean().sort_values()
-        
-        fig, ax = plt.subplots(figsize=(6, 4))
-        fig.patch.set_facecolor('#0d1b2a')
-        ax.set_facecolor('#0d1b2a')
-        ax.barh(summary.index, summary.values, color=PALETTE[:len(summary)])
-        ax.set_title('Rata-rata Qty per Kategori', color='white')
-        st.pyplot(fig)
-        st.caption("Narasi: Grafik ini membandingkan volume rata-rata penjualan per cluster untuk mengidentifikasi kategori barang paling dominan.")
-
+    # ── 5. Jarak Euclidean ───────────────────────────────────────────
     st.markdown("---")
+    st.markdown("<div class='section-title'>📐 Jarak Euclidean ke Centroid</div>", unsafe_allow_html=True)
+    st.dataframe(df_distances.head(50), use_container_width=True)
 
-    # 2. Distribusi Cluster (Pie) & Top 10 Terlaris
-    st.markdown("<div class='section-title'>📦 Distribusi & Top Produk</div>", unsafe_allow_html=True)
-    c3, c4 = st.columns(2)
-
-    with c3:
-        # Distribusi Cluster (Hanya Pie)
-        dist = df_clustered['Kategori'].value_counts()
-        fig, ax = plt.subplots(figsize=(6, 4))
-        fig.patch.set_facecolor('#0d1b2a')
-        ax.pie(dist.values, labels=dist.index, autopct='%1.1f%%', textprops={'color': 'white'})
-        ax.set_title('Proporsi Barang per Cluster', color='white')
-        st.pyplot(fig)
-        st.caption("Narasi: Menampilkan komposisi jumlah barang dalam setiap cluster untuk melihat keseimbangan distribusi data.")
-
-    with c4:
-        # Top 10 Terlaris
-        top10 = df_agg.sort_values('Qty_2022_2025', ascending=False).head(10)
-        fig, ax = plt.subplots(figsize=(6, 4))
-        fig.patch.set_facecolor('#0d1b2a')
-        ax.set_facecolor('#0d1b2a')
-        ax.barh(top10['Nama Barang'], top10['Qty_2022_2025'], color='#4fc3f7')
-        ax.invert_yaxis()
-        ax.set_title('Top 10 Barang Terlaris', color='white')
-        st.pyplot(fig)
-        st.caption("Narasi: Menampilkan 10 produk dengan kuantitas penjualan tertinggi yang menjadi penggerak utama bisnis.")
+    # ── 6. Download CSV ──────────────────────────────────────────────
+    st.markdown("---")
+    st.markdown("<div class='section-title'>⬇️ Unduh Laporan</div>", unsafe_allow_html=True)
+    df_export = df_full[['Nama Barang', 'Qty_2022_2025', 'Cluster', 'Kategori']].copy()
+    df_export.rename(columns={'Qty_2022_2025': 'Total Qty (Asli)'}, inplace=True)
+    csv = df_export.to_csv(index=False).encode('utf-8')
+    st.download_button(
+        label="⬇️ Download Hasil Clustering (.csv)",
+        data=csv,
+        file_name=f"hasil_clustering_toko_asri_mart_{datetime.now().strftime('%Y%m%d_%H%M')}.csv",
+        mime="text/csv",
+        use_container_width=True,
+        type="primary"
+    )
