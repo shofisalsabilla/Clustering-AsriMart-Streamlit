@@ -79,9 +79,9 @@ def show():
     with col_rek:
         st.markdown("<div class='section-title'>📝 Ringkasan Eksekutif & Strategi</div>", unsafe_allow_html=True)
         REKOMENDASI = {
-            "Cluster 1 = Laris": ["Prioritaskan ketersediaan stok.", "Jadikan produk sebagai fokus pemasaran.", "Pertahankan kualitas produk dan layanan."],
-            "Cluster 2 = Sedang": ["Pertahankan performa penjualan yang stabil.", "Lakukan promosi secara berkala.", "Pantau perkembangan permintaan pasar."],
-            "Cluster 0 = Kurang Laris": ["Tingkatkan promosi untuk mendorong minat beli.", "Evaluasi strategi pemasaran dan penempatan produk.", "Pantau penjualan secara berkala."],
+            "Laris": ["Prioritaskan ketersediaan stok.", "Jadikan produk sebagai fokus pemasaran.", "Pertahankan kualitas produk dan layanan."],
+            "Sedang": ["Pertahankan performa penjualan yang stabil.", "Lakukan promosi secara berkala.", "Pantau perkembangan permintaan pasar."],
+            "Kurang Laris": ["Tingkatkan promosi untuk mendorong minat beli.", "Evaluasi strategi pemasaran dan penempatan produk.", "Pantau penjualan secara berkala."],
         }
         for _, row in summary.sort_values('Jumlah_Barang', ascending=False).iterrows():
             kategori = row['Kategori']
