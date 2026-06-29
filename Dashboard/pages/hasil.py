@@ -3,7 +3,6 @@ import pandas as pd
 from datetime import datetime
 from utils import state
 
-
 def show():
     state.init_state()
 
@@ -49,7 +48,7 @@ def show():
                     border-radius:12px; padding:16px; text-align:center;'>
             <div style='font-size:2rem; font-weight:800; color:{c};'>{row['Jumlah_Barang']}</div>
             <div style='font-weight:700; color:{c}; font-size:1rem;'>{row['Kategori']}</div>
-            <div style='color:#7f8c8d; font-size:0.78rem; margin-top:6px;'>
+            <div style='color:#bdc3c7; font-size:0.78rem; margin-top:6px;'>
                 Avg: {row['Rata_Qty']:,.0f}<br>
                 Min: {row['Min_Qty']:,.0f} | Max: {row['Max_Qty']:,.0f}
             </div>
@@ -90,57 +89,41 @@ def show():
     )
     st.caption(f"Menampilkan {len(df_show):,} barang")
 
-    # ── 4. Jarak Euclidean ───────────────────────────────────────────
-    st.markdown("---")
-    st.markdown("<div class='section-title'>📐 Jarak Euclidean ke Centroid</div>", unsafe_allow_html=True)
-    st.caption("Semakin kecil jarak, semakin representatif barang tersebut terhadap centroid clusternya.")
-    st.dataframe(df_distances.head(50), use_container_width=True)
-
-    # ── 5. Ringkasan Eksekutif & Rekomendasi ─────────────────────────
+    # ── 4. Ringkasan Eksekutif & Strategi ────
     st.markdown("---")
     st.markdown("<div class='section-title'>📝 Ringkasan Eksekutif & Rekomendasi</div>", unsafe_allow_html=True)
     st.caption("Narasi skenario dan strategi pengelolaan produk berdasarkan karakteristik masing-masing cluster.")
 
-    REKOMENDASI = {
-        "Laris": [
-            "Prioritaskan ketersediaan stok.",
-            "Jadikan produk sebagai fokus pemasaran.",
-            "Pertahankan kualitas produk dan layanan.",
-        ],
-        "Sedang": [
-            "Pertahankan performa penjualan yang stabil.",
-            "Lakukan promosi secara berkala.",
-            "Pantau perkembangan permintaan pasar.",
-        ],
-        "Kurang Laris": [
-            "Tingkatkan promosi untuk mendorong minat beli.",
-            "Evaluasi strategi pemasaran dan penempatan produk.",
-            "Pantau penjualan secara berkala.",
-        ],
+    STRATEGI = {
+        "Laris": ["Prioritaskan ketersediaan stok.", "Jadikan produk sebagai fokus pemasaran.", "Pertahankan kualitas produk dan layanan."],
+        "Sedang": ["Pertahankan performa penjualan yang stabil.", "Lakukan promosi secara berkala.", "Pantau perkembangan permintaan pasar."],
+        "Kurang Laris": ["Tingkatkan promosi untuk mendorong minat beli.", "Evaluasi strategi pemasaran dan penempatan produk.", "Pantau penjualan secara berkala."],
     }
-    DEFAULT_REKOMENDASI = [
-        "Pantau perkembangan penjualan produk pada cluster ini secara berkala.",
-        "Evaluasi strategi pemasaran sesuai karakteristik cluster.",
-    ]
-
+    
     for _, row in summary.sort_values('Jumlah_Barang', ascending=False).iterrows():
         kategori = row['Kategori']
         c = colors.get(kategori, "#3498db")
-        poin = REKOMENDASI.get(kategori, DEFAULT_REKOMENDASI)
-        list_html = "".join([f"<li style='margin-bottom:4px;'>{p}</li>" for p in poin])
+        poin = REKOMENDASI.get(kategori, ["Pantau perkembangan berkala."])
+        list_html = "".join([f"<li style='margin-bottom:4px; color:#ffffff;'>{p}</li>" for p in poin])
         st.markdown(f"""
-        <div style='background:rgba(255,255,255,0.04); border-left:4px solid {c};
+        <div style='background:rgba(255,255,255,0.05); border-left:4px solid {c};
                     border-radius:10px; padding:14px 18px; margin-bottom:12px;'>
             <div style='font-weight:700; color:{c}; font-size:1.05rem;'>
-                {kategori} &nbsp;<span style='color:#7f8c8d; font-size:0.8rem; font-weight:400;'>
+                {kategori} &nbsp;<span style='color:#bdc3c7; font-size:0.8rem; font-weight:400;'>
                 ({int(row['Jumlah_Barang'])} produk)</span>
             </div>
-            <div style='color:#ecf0f1; font-size:0.85rem; margin-top:8px;'>
+            <div style='color:#ffffff; font-size:0.9rem; margin-top:8px;'>
                 <b>Rekomendasi:</b>
                 <ul style='margin:6px 0 0 18px; padding:0;'>{list_html}</ul>
             </div>
         </div>
         """, unsafe_allow_html=True)
+
+    # ── 5. Jarak Euclidean ───────────────────────────────────────────
+    st.markdown("---")
+    st.markdown("<div class='section-title'>📐 Jarak Euclidean ke Centroid</div>", unsafe_allow_html=True)
+    st.caption("Semakin kecil jarak, semakin representatif barang tersebut terhadap centroid clusternya.")
+    st.dataframe(df_distances.head(50), use_container_width=True)
 
     # ── 6. Download CSV ──────────────────────────────────────────────
     st.markdown("---")
