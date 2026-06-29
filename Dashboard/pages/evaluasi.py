@@ -15,14 +15,12 @@ PALETTE = ["#e74c3c", "#f39c12", "#27ae60", "#3498db", "#9b59b6",
 def show():
     state.init_state()
 
-    st.markdown("""
-    <div class='main-header'>
+    st.markdown("""<div class='main-header'>
         <h2 style='margin:0; color:white;'>📉 Evaluasi & Visualisasi</h2>
         <p style='margin:4px 0 0; color:#b0c4de; font-size:0.9rem;'>
             Silhouette Score, Scatter PCA, Bar Chart, dan distribusi cluster
         </p>
-    </div>
-    """, unsafe_allow_html=True)
+    </div>""", unsafe_allow_html=True)
 
     if not state.get("cluster_done"):
         st.warning("⚠️ Harap selesaikan **Konfigurasi Clustering** terlebih dahulu.")
@@ -71,6 +69,7 @@ def show():
         ax.tick_params(colors='#b0c4de'); ax.spines[['top', 'right', 'bottom', 'left']].set_color('#2a4a7f')
         ax.grid(True, linestyle='--', alpha=0.3, color='#4a6080'); ax.legend(facecolor='#1a2a3a', labelcolor='white')
         st.pyplot(fig); plt.close(fig)
+        st.info("Visualisasi ini mereduksi dimensi data ke ruang 2D menggunakan PCA untuk melihat bagaimana model memisahkan produk ke dalam cluster berdasarkan kemiripan pola penjualan.")
 
     with col_kanan:
         st.markdown("<div class='section-title'>📊 Bar Chart Rata-rata Qty</div>", unsafe_allow_html=True)
@@ -85,6 +84,7 @@ def show():
         ax.set_xlabel('Rata-rata Qty (Total 2022-2025)', color='#b0c4de'); ax.tick_params(colors='#b0c4de')
         ax.spines[['top', 'right', 'bottom', 'left']].set_color('#2a4a7f'); ax.grid(axis='x', linestyle='--', alpha=0.3, color='#4a6080')
         st.pyplot(fig); plt.close(fig)
+        st.info("Grafik ini menunjukkan performa rata-rata kuantitas penjualan per cluster, membantu mengidentifikasi karakteristik tiap segmen apakah cenderung 'laris' atau 'slow moving'.")
 
     st.markdown("---")
     
@@ -99,6 +99,7 @@ def show():
         ax.pie(dist.values, labels=labels, autopct='%1.1f%%', colors=PALETTE[:len(dist)], textprops={'color': 'white', 'fontsize': 9})
         ax.set_title('Proporsi & Jumlah Produk per Cluster', color='white', fontsize=12, fontweight='bold')
         st.pyplot(fig); plt.close(fig)
+        st.info("Menampilkan proporsi jumlah produk di setiap cluster untuk memberikan gambaran keseimbangan segmentasi yang dihasilkan oleh model.")
 
     with col_top:
         st.markdown("<div class='section-title'>🏆 Top 10 Terlaris</div>", unsafe_allow_html=True)
@@ -112,3 +113,4 @@ def show():
         ax.set_xlabel('Total Qty Terjual', color='#b0c4de'); ax.tick_params(colors='#b0c4de')
         ax.spines[['top', 'right', 'bottom', 'left']].set_color('#2a4a7f'); ax.grid(axis='x', linestyle='--', alpha=0.3, color='#4a6080')
         st.pyplot(fig); plt.close(fig)
+        st.info("Daftar 10 produk dengan volume penjualan tertinggi selama tahun 2022-2025, yang merupakan aset paling berharga dalam inventaris Anda.")
