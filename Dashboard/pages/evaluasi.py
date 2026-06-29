@@ -32,7 +32,7 @@ def show():
     sil = state.get("silhouette_score")
 
     # Silhouette Score
-    st.markdown("<div class='section-title'>📏 Evaluasi Silhouette Score</div>", unsafe_allow_html=True)
+    st.markdown("<div class='section-title'>📏 Evaluasi Silhouette Score</div>", unsafe_html=True)
     col1, col2, col3 = st.columns(3)
     col1.metric("Silhouette Score", f"{sil:.4f}")
     col2.metric("Jumlah Cluster", state.get("n_clusters"))
@@ -40,7 +40,7 @@ def show():
     st.markdown("---")
 
     # Scatter Plot PCA
-    st.markdown("<div class='section-title'>🔵 Scatter Plot PCA</div>", unsafe_allow_html=True)
+    st.markdown("<div class='section-title'>🔵 Scatter Plot PCA</div>", unsafe_html=True)
     st.markdown("**Visualisasi cluster dengan PCA 2D**")
     X = df_clustered[['Qty_2022_2025']]
     scaler_std = StandardScaler()
@@ -85,7 +85,7 @@ def show():
     st.markdown("---")
 
     # Bar Chart Rata-rata Qty
-    st.markdown("<div class='section-title'>📊 Bar Chart Rata-rata Qty</div>", unsafe_allow_html=True)
+    st.markdown("<div class='section-title'>📊 Bar Chart Rata-rata Qty</div>", unsafe_html=True)
     df_full = df_clustered.merge(df_agg, on='Nama Barang', suffixes=('_norm', ''))
     summary = df_full.groupby('Kategori')['Qty_2022_2025'].mean().sort_values()
 
@@ -109,7 +109,7 @@ def show():
     st.markdown("---")
 
     # Distribusi Cluster
-    st.markdown("<div class='section-title'>📦 Distribusi Cluster</div>", unsafe_allow_html=True)
+    st.markdown("<div class='section-title'>📦 Distribusi Cluster</div>", unsafe_html=True)
     dist = df_clustered['Kategori'].value_counts()
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
     fig.patch.set_facecolor('#0d1b2a')
@@ -134,7 +134,7 @@ def show():
     st.markdown("---")
 
     # Top 10 Terlaris
-    st.markdown("<div class='section-title'>🏆 Top 10 Terlaris</div>", unsafe_allow_html=True)
+    st.markdown("<div class='section-title'>🏆 Top 10 Terlaris</div>", unsafe_html=True)
     top10 = df_agg.sort_values('Qty_2022_2025', ascending=False).head(10)
     fig, ax = plt.subplots(figsize=(10, 6))
     fig.patch.set_facecolor('#0d1b2a')
