@@ -25,38 +25,42 @@ def show():
     # Elbow Method
     st.markdown("<div class='section-title'>📉 Metode Elbow (Menentukan k Optimal)</div>", unsafe_allow_html=True)
 
-    k_max = st.slider("Batas maksimum k untuk analisis Elbow:", min_value=5, max_value=15, value=10)
+    # Membuat dua kolom: [1, 2] berarti kiri lebih sempit, kanan lebih lebar
+    col_control, col_graph = st.columns([1, 2])
 
-    if st.button("🔍 Hitung Elbow Method", use_container_width=True):
-        with st.spinner("Menghitung WCSS untuk setiap nilai k..."):
-            wcss = clustering.compute_elbow(df_scaled, k_max)
-            state.set("wcss", wcss)
+    with col_control:
+        k_max = st.slider("Batas maksimum k untuk analisis Elbow:", min_value=5, max_value=15, value=10)
 
-    wcss = state.get("wcss")
-    if wcss:
-        # Grafik diperkecil dengan figsize=(6, 2.5) dan layout lebih padat
-        fig, ax = plt.subplots(figsize=(6, 2.5))
-        fig.patch.set_facecolor('#0d1b2a')
-        ax.set_facecolor('#0d1b2a')
-
-        K = range(1, len(wcss) + 1)
-        ax.plot(K, wcss, marker='o', linestyle='--', color='#4fc3f7', linewidth=1.5, markersize=5)
-        ax.fill_between(K, wcss, alpha=0.1, color='#4fc3f7')
-
-        ax.set_xlabel('Jumlah Cluster (k)', color='#b0c4de', fontsize=8)
-        ax.set_ylabel('SSE', color='#b0c4de', fontsize=8)
-        ax.set_title('Grafik Metode Elbow', color='white', fontsize=10, fontweight='bold')
-        ax.tick_params(colors='#b0c4de', labelsize=7)
-        ax.spines[['top', 'right']].set_visible(False)
-        ax.spines[['bottom', 'left']].set_color('#2a4a7f')
-        ax.grid(True, linestyle='--', alpha=0.2, color='#4a6080')
-        ax.set_xticks(list(K))
+        if st.button("🔍 Hitung Elbow Method", use_container_width=True):
+            with st.spinner("Menghitung WCSS untuk setiap nilai k..."):
+                wcss = clustering.compute_elbow(df_scaled, k_max)
+                state.set("wcss", wcss)
         
-        plt.tight_layout() # Membuat grafik lebih rapat
-
-        st.pyplot(fig)
-        plt.close(fig)
         st.caption("💡 Pilih nilai k di titik 'siku' — dimana penurunan WCSS mulai melambat.")
+
+    with col_graph:
+        wcss = state.get("wcss")
+        if wcss:
+            fig, ax = plt.subplots(figsize=(6, 2.5))
+            fig.patch.set_facecolor('#0d1b2a')
+            ax.set_facecolor('#0d1b2a')
+
+            K = range(1, len(wcss) + 1)
+            ax.plot(K, wcss, marker='o', linestyle='--', color='#4fc3f7', linewidth=1.5, markersize=5)
+            ax.fill_between(K, wcss, alpha=0.1, color='#4fc3f7')
+
+            ax.set_xlabel('Jumlah Cluster (k)', color='#b0c4de', fontsize=8)
+            ax.set_ylabel('SSE', color='#b0c4de', fontsize=8)
+            ax.set_title('Grafik Metode Elbow', color='white', fontsize=10, fontweight='bold')
+            ax.tick_params(colors='#b0c4de', labelsize=7)
+            ax.spines[['top', 'right']].set_visible(False)
+            ax.spines[['bottom', 'left']].set_color('#2a4a7f')
+            ax.grid(True, linestyle='--', alpha=0.2, color='#4a6080')
+            ax.set_xticks(list(K))
+            
+            plt.tight_layout()
+            st.pyplot(fig)
+            plt.close(fig)
 
     # Konfigurasi k
     st.markdown("---")
