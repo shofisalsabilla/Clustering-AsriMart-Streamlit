@@ -76,7 +76,7 @@ def show():
         st.caption(f"Menampilkan {len(df_show):,} barang")
 
     with col_rek:
-        st.markdown("<div class='section-title'>📝 Ringkasan Eksekutif & Rekomendasi</div>", unsafe_allow_html=True)
+        st.markdown("<div class='section-title'>📝 Ringkasan Eksekutif & Strategii</div>", unsafe_allow_html=True)
         REKOMENDASI = {
             "Laris": ["Prioritaskan ketersediaan stok.", "Jadikan produk sebagai fokus pemasaran.", "Pertahankan kualitas produk dan layanan."],
             "Sedang": ["Pertahankan performa penjualan yang stabil.", "Lakukan promosi secara berkala.", "Pantau perkembangan permintaan pasar."],
