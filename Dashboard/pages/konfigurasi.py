@@ -34,23 +34,25 @@ def show():
 
     wcss = state.get("wcss")
     if wcss:
-        # Grafik diperkecil dengan figsize=(7, 3)
-        fig, ax = plt.subplots(figsize=(7, 3))
+        # Grafik diperkecil dengan figsize=(6, 2.5) dan layout lebih padat
+        fig, ax = plt.subplots(figsize=(6, 2.5))
         fig.patch.set_facecolor('#0d1b2a')
         ax.set_facecolor('#0d1b2a')
 
         K = range(1, len(wcss) + 1)
-        ax.plot(K, wcss, marker='o', linestyle='--', color='#4fc3f7', linewidth=2, markersize=8)
+        ax.plot(K, wcss, marker='o', linestyle='--', color='#4fc3f7', linewidth=1.5, markersize=5)
         ax.fill_between(K, wcss, alpha=0.1, color='#4fc3f7')
 
-        ax.set_xlabel('Jumlah Cluster (k)', color='#b0c4de', fontsize=9)
-        ax.set_ylabel('SSE (Inertia)', color='#b0c4de', fontsize=9)
-        ax.set_title('Grafik Metode Elbow', color='white', fontsize=11, fontweight='bold')
-        ax.tick_params(colors='#b0c4de', labelsize=8)
+        ax.set_xlabel('Jumlah Cluster (k)', color='#b0c4de', fontsize=8)
+        ax.set_ylabel('SSE', color='#b0c4de', fontsize=8)
+        ax.set_title('Grafik Metode Elbow', color='white', fontsize=10, fontweight='bold')
+        ax.tick_params(colors='#b0c4de', labelsize=7)
         ax.spines[['top', 'right']].set_visible(False)
         ax.spines[['bottom', 'left']].set_color('#2a4a7f')
-        ax.grid(True, linestyle='--', alpha=0.3, color='#4a6080')
+        ax.grid(True, linestyle='--', alpha=0.2, color='#4a6080')
         ax.set_xticks(list(K))
+        
+        plt.tight_layout() # Membuat grafik lebih rapat
 
         st.pyplot(fig)
         plt.close(fig)
