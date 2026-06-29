@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 from utils import state, clustering
 
-
 def show():
     state.init_state()
 
@@ -96,20 +95,24 @@ def show():
 
     st.markdown("---")
 
-    # 2. Data Agregasi
-    st.markdown("<div class='section-title'>📊 Data Agregasi</div>", unsafe_allow_html=True)
-    col1, col2 = st.columns(2)
-    col1.metric("Total Barang Unik", len(df_agg))
-    col2.metric("Total Qty Keseluruhan", f"{int(df_agg['Qty_2022_2025'].sum()):,}")
-    st.markdown(f"**{len(df_agg):,} jenis barang** setelah agregasi")
-    st.dataframe(df_agg, use_container_width=True)
+    # 2 & 3. Data Agregasi & Data Normalisasi (Samping-menyamping)
+    col_agregasi, col_normalisasi = st.columns(2)
 
-    st.markdown("---")
+    with col_agregasi:
+        st.markdown("<div class='section-title'>📊 Data Agregasi</div>", unsafe_allow_html=True)
+        st.metric("Total Barang Unik", len(df_agg))
+        st.metric("Total Qty Keseluruhan", f"{int(df_agg['Qty_2022_2025'].sum()):,}")
+        st.markdown(f"**{len(df_agg):,} jenis barang** setelah agregasi")
+        st.dataframe(df_agg, use_container_width=True)
 
-    # 3. Data Normalisasi
-    st.markdown("<div class='section-title'>📐 Data Normalisasi</div>", unsafe_allow_html=True)
-    st.markdown("Data setelah **Min-Max Normalisasi** (skala 0–1)")
-    st.dataframe(df_scaled, use_container_width=True)
+    with col_normalisasi:
+        st.markdown("<div class='section-title'>📐 Data Normalisasi</div>", unsafe_allow_html=True)
+        st.markdown("Data setelah **Min-Max Normalisasi** (skala 0–1)")
+        # Tambahkan jarak vertikal agar sejajar dengan tabel sebelah
+        st.write("") 
+        st.write("")
+        st.write("")
+        st.dataframe(df_scaled, use_container_width=True)
 
     st.markdown("---")
     st.info("✅ Data siap digunakan. Lanjut ke **⚙️ Konfigurasi Clustering**.", icon="ℹ️")
