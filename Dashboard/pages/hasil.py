@@ -96,6 +96,52 @@ def show():
     st.caption("Semakin kecil jarak, semakin representatif barang tersebut terhadap centroid clusternya.")
     st.dataframe(df_distances.head(50), use_container_width=True)
 
+    # ── 5. Ringkasan Eksekutif & Rekomendasi ─────────────────────────
+    st.markdown("---")
+    st.markdown("<div class='section-title'>📝 Ringkasan Eksekutif & Rekomendasi</div>", unsafe_allow_html=True)
+    st.caption("Narasi skenario dan strategi pengelolaan produk berdasarkan karakteristik masing-masing cluster.")
+
+    REKOMENDASI = {
+        "Laris": [
+            "Prioritaskan ketersediaan stok.",
+            "Jadikan produk sebagai fokus pemasaran.",
+            "Pertahankan kualitas produk dan layanan.",
+        ],
+        "Sedang": [
+            "Pertahankan performa penjualan yang stabil.",
+            "Lakukan promosi secara berkala.",
+            "Pantau perkembangan permintaan pasar.",
+        ],
+        "Kurang Laris": [
+            "Tingkatkan promosi untuk mendorong minat beli.",
+            "Evaluasi strategi pemasaran dan penempatan produk.",
+            "Pantau penjualan secara berkala.",
+        ],
+    }
+    DEFAULT_REKOMENDASI = [
+        "Pantau perkembangan penjualan produk pada cluster ini secara berkala.",
+        "Evaluasi strategi pemasaran sesuai karakteristik cluster.",
+    ]
+
+    for _, row in summary.sort_values('Jumlah_Barang', ascending=False).iterrows():
+        kategori = row['Kategori']
+        c = colors.get(kategori, "#3498db")
+        poin = REKOMENDASI.get(kategori, DEFAULT_REKOMENDASI)
+        list_html = "".join([f"<li style='margin-bottom:4px;'>{p}</li>" for p in poin])
+        st.markdown(f"""
+        <div style='background:rgba(255,255,255,0.04); border-left:4px solid {c};
+                    border-radius:10px; padding:14px 18px; margin-bottom:12px;'>
+            <div style='font-weight:700; color:{c}; font-size:1.05rem;'>
+                {kategori} &nbsp;<span style='color:#7f8c8d; font-size:0.8rem; font-weight:400;'>
+                ({int(row['Jumlah_Barang'])} produk)</span>
+            </div>
+            <div style='color:#ecf0f1; font-size:0.85rem; margin-top:8px;'>
+                <b>Rekomendasi:</b>
+                <ul style='margin:6px 0 0 18px; padding:0;'>{list_html}</ul>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
     # ── 6. Download CSV ──────────────────────────────────────────────
     st.markdown("---")
     st.markdown("<div class='section-title'>⬇️ Unduh Laporan</div>", unsafe_allow_html=True)
