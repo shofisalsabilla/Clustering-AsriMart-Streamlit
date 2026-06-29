@@ -45,7 +45,6 @@ def show():
     col_kiri, col_kanan = st.columns(2)
 
     with col_kiri:
-        # Scatter Plot PCA (Bentuk Asli Anda)
         st.markdown("<div class='section-title'>🔵 Scatter Plot PCA</div>", unsafe_allow_html=True)
         st.markdown("**Visualisasi cluster dengan PCA 2D**")
         X = df_clustered[['Qty_2022_2025']]
@@ -74,7 +73,6 @@ def show():
         st.pyplot(fig); plt.close(fig)
 
     with col_kanan:
-        # Bar Chart Rata-rata (Bentuk Asli Anda)
         st.markdown("<div class='section-title'>📊 Bar Chart Rata-rata Qty</div>", unsafe_allow_html=True)
         df_full = df_clustered.merge(df_agg, on='Nama Barang', suffixes=('_norm', ''))
         summary = df_full.groupby('Kategori')['Qty_2022_2025'].mean().sort_values()
@@ -95,13 +93,11 @@ def show():
     with col_dist:
         st.markdown("<div class='section-title'>📦 Distribusi Cluster</div>", unsafe_allow_html=True)
         dist = df_clustered['Kategori'].value_counts()
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
-        fig.patch.set_facecolor('#0d1b2a'); ax1.set_facecolor('#0d1b2a'); ax2.set_facecolor('#0d1b2a')
-        ax1.bar(dist.index, dist.values, color=PALETTE[:len(dist)], edgecolor='none')
-        ax1.set_title('Jumlah Barang per Cluster', color='white', fontsize=12, fontweight='bold')
-        ax1.tick_params(colors='#b0c4de'); ax1.spines[['top', 'right', 'bottom', 'left']].set_color('#2a4a7f')
-        ax2.pie(dist.values, labels=dist.index, autopct='%1.1f%%', colors=PALETTE[:len(dist)], textprops={'color': 'white'})
-        ax2.set_title('Proporsi Cluster (%)', color='white', fontsize=12, fontweight='bold')
+        labels = [f"{idx}\n({val} produk)" for idx, val in dist.items()]
+        fig, ax = plt.subplots(figsize=(8, 5))
+        fig.patch.set_facecolor('#0d1b2a'); ax.set_facecolor('#0d1b2a')
+        ax.pie(dist.values, labels=labels, autopct='%1.1f%%', colors=PALETTE[:len(dist)], textprops={'color': 'white', 'fontsize': 9})
+        ax.set_title('Proporsi & Jumlah Produk per Cluster', color='white', fontsize=12, fontweight='bold')
         st.pyplot(fig); plt.close(fig)
 
     with col_top:
