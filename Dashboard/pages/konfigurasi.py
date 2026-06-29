@@ -64,8 +64,8 @@ def show():
 
     # Menambahkan narasi penjelasan
             st.markdown("""
-            <div style='background-color:rgba(79, 195, 247, 0.1); padding: 10px; border-radius: 8px; border-left: 3px solid #4fc3f7;'>
-                <p style='font-size: 0.85rem; color: #e1e1e1; margin: 0;'>
+<div style='background-color:#ffffff; padding: 15px; border-radius: 8px; border-left: 5px solid #4fc3f7; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>
+    <p style='font-size: 0.9rem; color: #000000; margin: 0;'>
                     <strong>Cara membaca grafik:</strong> Metode Elbow menunjukkan titik di mana penurunan 
                     nilai SSE (Inertia) mulai melambat secara signifikan, membentuk sudut seperti <strong>"siku"</strong>. 
                     Nilai k pada titik siku tersebut dianggap sebagai jumlah cluster yang optimal untuk data tersebut.
