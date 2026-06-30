@@ -7,8 +7,7 @@ from utils import state, clustering
 def show():
     state.init_state()
 
-    # Perbaikan: Gunakan st.container dengan class untuk styling jika memungkinkan,
-    # namun agar aman dari TypeError, kita gunakan penulisan Markdown yang bersih.
+    # Perbaikan: Menggunakan penulisan Markdown standar untuk mencegah TypeError
     st.markdown("## ⚙️ Konfigurasi Clustering")
 
     if not state.get("upload_done"):
@@ -30,7 +29,7 @@ def show():
             ax.plot(range(1, len(state.get("wcss")) + 1), state.get("wcss"), marker='o', color='#4fc3f7')
             st.pyplot(fig)
 
-    # 2. Input Label dengan Logika Dinamis (Koreksi Penamaan)
+    # 2. Input Label dengan Logika Dinamis (Sesuai permintaan Anda)
     st.markdown("---")
     n_clusters = st.number_input(
         "Masukkan nilai k (2-5):", 
@@ -40,15 +39,15 @@ def show():
     )
     state.set("n_clusters", n_clusters)
     
-    # Koreksi penamaan label sesuai permintaan
+    # Logika label yang telah disesuaikan:
     if n_clusters == 2:
         default_labels = ["Kurang Laris", "Laris"]
     elif n_clusters == 3:
-        default_labels = ["Kurang Laris", "Laris", "Sangat Laris"]
+        default_labels = ["Kurang Laris", "Sedang", "Laris"]
     elif n_clusters == 4:
-        default_labels = ["Sangat Rendah", "Kurang Laris", "Laris", "Sangat Laris"]
+        default_labels = ["Kurang Laris", "Sedang", "Laris", "Sangat Laris"]
     else: # n_clusters == 5
-        default_labels = ["Sangat Rendah", "Rendah", "Kurang Laris", "Laris", "Sangat Laris"]
+        default_labels = ["Sangat Rendah", "Kurang Laris", "Sedang", "Laris", "Sangat Laris"]
     
     cols = st.columns(min(n_clusters, 5))
     new_label_map = {}
@@ -56,14 +55,16 @@ def show():
         with cols[i % min(n_clusters, 5)]:
             new_label_map[i] = st.text_input(f"Rank {i+1}:", value=default_labels[i], key=f"label_{i}")
 
-    # 3. Jalankan K-Means dengan Pengurutan (Logic tetap konsisten)
+    # 3. Jalankan K-Means dengan pengurutan otomatis berdasarkan rata-rata Qty
     if st.button("🚀 Jalankan K-Means", type="primary", use_container_width=True):
         try:
             model, df_clustered, df_dist, sil, _ = clustering.run_kmeans(df_scaled, n_clusters, new_label_map)
             
+            # Logika pengurutan: Cluster dengan rata-rata Qty terkecil selalu jadi Rank 1
             cluster_means = df_clustered.groupby('Cluster')['Qty_2022_2025'].mean().sort_values()
             mapping = {old_id: i for i, (old_id, _) in enumerate(cluster_means.items())}
             
+            # Memetakan ulang label berdasarkan urutan rata-rata
             sorted_label_list = [new_label_map[old_id] for old_id, _ in cluster_means.items()]
             final_label_map = {i: label for i, label in enumerate(sorted_label_list)}
             
