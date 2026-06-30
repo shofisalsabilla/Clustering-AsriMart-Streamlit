@@ -15,23 +15,26 @@ def show():
 
     df_scaled = state.get("df_scaled")
 
-    # 1. Metode Elbow dengan Narasi Baru
+    # 1. Metode Elbow
     st.markdown("### 📉 Metode Elbow")
     st.info("""
     Metode Elbow menunjukkan titik di mana penurunan nilai SSE (Inertia) mulai melambat secara signifikan, 
     membentuk sudut seperti **"siku"**. Nilai k pada titik siku tersebut dianggap sebagai jumlah 
     cluster yang optimal untuk data tersebut.
     """)
-
+    
     col_control, col_graph = st.columns([1, 2])
     with col_control:
         k_max = st.slider("Batas maksimum k:", min_value=5, max_value=15, value=10)
+        # Jika tombol ditekan, update state wcss
         if st.button("🔍 Hitung Elbow Method"):
-            state.set("wcss", clustering.compute_elbow(df_scaled, k_max))
-    
+            wcss_data = clustering.compute_elbow(df_scaled, k_max)
+            state.set("wcss", wcss_data)
+            
     with col_graph:
-        if state.get("wcss"):
-            wcss = state.get("wcss")
+        # Menampilkan grafik jika wcss tersedia di state
+        wcss = state.get("wcss")
+        if wcss is not None:
             k_values = range(1, len(wcss) + 1)
             fig, ax = plt.subplots(figsize=(8, 4))
             ax.plot(k_values, wcss, marker='o', linestyle='-', color='#007acc', linewidth=2, markersize=6)
@@ -40,6 +43,8 @@ def show():
             ax.set_ylabel("Inertia (SSE)")
             ax.grid(True, linestyle='--', alpha=0.6)
             st.pyplot(fig)
+        else:
+            st.warning("Tekan tombol 'Hitung Elbow Method' untuk menampilkan grafik.")
 
     # 2. Input Label
     st.markdown("---")
@@ -63,7 +68,6 @@ def show():
     cols = st.columns(n_clusters)
     new_label_map = {}
     
-    # Key unik berdasarkan k memastikan input ter-reset
     for i in range(n_clusters):
         with cols[i]:
             new_label_map[i] = st.text_input(
