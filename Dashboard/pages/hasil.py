@@ -88,13 +88,13 @@ def show():
         st.caption(f"Menampilkan {len(df_show):,} barang")
 
     with col_rek:
-        st.markdown("<div class='section-title'>📝 Ringkasan Eksekutif & Strategi</div>", unsafe_allow_html=True)
+        st.markdown("<div class='section-title'>📝 Rekomendasi/Strategi</div>", unsafe_allow_html=True)
         REKOMENDASI = {
-            "Sangat Laris": ["Prioritas stok utama (jangan sampai kosong).", "Gunakan sebagai produk bundling.", "Perluas area pajang."],
-            "Laris": ["Pertahankan stok optimal.", "Jadikan fokus pemasaran utama.", "Pantau kualitas produk."],
-            "Sedang": ["Pertahankan penjualan stabil.", "Promosi berkala.", "Analisis tren pasar."],
-            "Kurang Laris": ["Evaluasi penempatan rak.", "Tingkatkan promosi/diskon.", "Kurangi variasi stok."],
-            "Sangat Rendah": ["Diskon cuci gudang (clearance).", "Pertimbangkan ganti produk.", "Evaluasi kelayakan jual."]
+            "Sangat Laris": ["Tingkatkan ketersediaan stok untuk menghindari kehabisan.", "Jadikan produk sebagai produk unggulan.", "Pertahankan strategi pemasaran yang efektif."],
+            "Laris": ["Prioritaskan ketersediaan stok stok.", "Jadikan fokus pemasaran.", "Pertahankan kualitas produk dan layanan."],
+            "Sedang": ["Pertahankan peforma penjualan yang stabil.", "Lakukan promosi secara berkala.", "Pantau perkembangan permintaan pasar."],
+            "Kurang Laris": ["Tingkatkan promosi produk.", "Evaluasi strategi pemasaran yang digunakan.", "Pantau perkembangan penjualan secara berkala."],
+            "Sangat Rendah": ["Evaluasi produk dengan tingkat penjualan terendah.", "Pertimbangkan pemberian diskon atau promosi.", "Kurangi prioritas pengadaan stok baru."]
         }
         
         # Iterasi berdasarkan Rata_Qty dari besar ke kecil
