@@ -36,14 +36,14 @@ def show():
         Max_Qty=('Qty_2022_2025', 'max'),
     ).reset_index().sort_values('Rata_Qty')
 
-    # 1 & 2. Ringkasan Cluster & Centroid
-    col_kiri, col_kanan = st.columns([2, 1])
-    
     # Warna dinamis berdasarkan kategori
     def get_color(kategori):
         if kategori in ["Sangat Laris", "Laris"]: return "#27ae60"
         if kategori == "Sedang": return "#f39c12"
         return "#e74c3c"
+
+    # 1 & 2. Ringkasan Cluster & Centroid
+    col_kiri, col_kanan = st.columns([2, 1])
     
     with col_kiri:
         st.markdown("<div class='section-title'>📌 Ringkasan Cluster</div>", unsafe_allow_html=True)
@@ -60,16 +60,20 @@ def show():
 
     with col_kanan:
         st.markdown("<div class='section-title'>🎯 Posisi Centroid</div>", unsafe_allow_html=True)
+        inv_label_map = {v: k for k, v in label_map.items()}
         centroid_data = []
-        df_means = df_clustered.groupby('Cluster')['Qty_2022_2025'].mean().sort_values()
         
-        for cid, _ in df_means.items():
-            centroid_norm = model.cluster_centers_[cid].reshape(1, -1)
-            centroid_asli = scaler.inverse_transform(centroid_norm)[0][0]
-            centroid_data.append({
-                "Kategori": label_map.get(cid, f"Cluster {cid}"), 
-                "Centroid": round(centroid_asli, 0)
-            })
+        # Iterasi sesuai urutan summary agar konsisten
+        for _, row in summary.iterrows():
+            kategori = row['Kategori']
+            cid = inv_label_map.get(kategori)
+            if cid is not None:
+                centroid_norm = model.cluster_centers_[cid].reshape(1, -1)
+                centroid_asli = scaler.inverse_transform(centroid_norm)[0][0]
+                centroid_data.append({
+                    "Kategori": kategori, 
+                    "Centroid": f"{int(centroid_asli):,}" # Format dengan pemisah ribuan
+                })
         st.table(pd.DataFrame(centroid_data))
 
     # 3 & 4. Tabel Hasil & Rekomendasi
@@ -90,22 +94,18 @@ def show():
     with col_rek:
         st.markdown("<div class='section-title'>📝 Rekomendasi/Strategi</div>", unsafe_allow_html=True)
         REKOMENDASI = {
-            "Sangat Laris": ["Tingkatkan ketersediaan stok untuk menghindari kehabisan.", "Jadikan produk sebagai produk unggulan.", "Pertahankan strategi pemasaran yang efektif."],
-            "Laris": ["Prioritaskan ketersediaan stok.", "Jadikan fokus pemasaran.", "Pertahankan kualitas produk dan layanan."],
-            "Sedang": ["Pertahankan performa penjualan yang stabil.", "Lakukan promosi secara berkala.", "Pantau perkembangan permintaan pasar."],
-            "Kurang Laris": ["Tingkatkan promosi produk.", "Evaluasi strategi pemasaran yang digunakan.", "Pantau perkembangan penjualan secara berkala."],
-            "Sangat Rendah": ["Evaluasi produk dengan tingkat penjualan terendah.", "Pertimbangkan pemberian diskon atau promosi.", "Kurangi prioritas pengadaan stok baru."]
+            "Sangat Laris": ["Tingkatkan ketersediaan stok.", "Jadikan produk unggulan.", "Pertahankan pemasaran efektif."],
+            "Laris": ["Prioritaskan ketersediaan stok.", "Jadikan fokus pemasaran.", "Pertahankan kualitas produk."],
+            "Sedang": ["Pertahankan performa stabil.", "Lakukan promosi berkala.", "Pantau permintaan pasar."],
+            "Kurang Laris": ["Tingkatkan promosi produk.", "Evaluasi strategi pemasaran.", "Pantau penjualan berkala."],
+            "Sangat Rendah": ["Evaluasi kelayakan jual.", "Pertimbangkan diskon/promosi.", "Kurangi pengadaan stok."]
         }
         
-        # Mapping balik untuk mendapatkan ID Cluster dari Kategori
         inv_label_map = {v: k for k, v in label_map.items()}
-        
-        # Iterasi berdasarkan Rata_Qty dari besar ke kecil
         for _, row in summary.sort_values('Rata_Qty', ascending=False).iterrows():
             kategori = row['Kategori']
             c = get_color(kategori)
             cluster_id = inv_label_map.get(kategori, "?")
-            
             poin = REKOMENDASI.get(kategori, ["Pantau perkembangan berkala."])
             list_html = "".join([f"<li style='margin-bottom:4px; color:#000000;'>{p}</li>" for p in poin])
             
