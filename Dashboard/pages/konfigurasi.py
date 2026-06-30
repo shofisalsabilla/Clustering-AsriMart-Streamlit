@@ -28,13 +28,17 @@ def show():
             ax.plot(range(1, len(state.get("wcss")) + 1), state.get("wcss"), marker='o', color='#4fc3f7')
             st.pyplot(fig)
 
-    # 2. Input Label
+    # 2. Input Label dengan Batas k (2-5)
     st.markdown("---")
-    n_clusters = st.number_input("Masukkan nilai k:", min_value=2, max_value=10, value=state.get("n_clusters") or 3)
+    n_clusters = st.number_input(
+        "Masukkan nilai k (2-5):", 
+        min_value=2, 
+        max_value=5, 
+        value=state.get("n_clusters") or 3
+    )
     state.set("n_clusters", n_clusters)
     
-    default_labels = ["Sangat Rendah", "Rendah", "Sedang", "Tinggi", "Sangat Tinggi", 
-                      "Cluster 6", "Cluster 7", "Cluster 8", "Cluster 9", "Cluster 10"]
+    default_labels = ["Sangat Rendah", "Rendah", "Sedang", "Tinggi", "Sangat Tinggi"]
     
     cols = st.columns(min(n_clusters, 5))
     new_label_map = {}
@@ -45,23 +49,32 @@ def show():
     # 3. Jalankan K-Means dengan Pengurutan Otomatis
     if st.button("🚀 Jalankan K-Means", type="primary", use_container_width=True):
         try:
+            # Jalankan K-Means
             model, df_clustered, df_dist, sil, _ = clustering.run_kmeans(df_scaled, n_clusters, new_label_map)
             
             # --- LOGIKA PENGURUTAN ---
-            # Urutkan berdasarkan rata-rata Qty
+            # Hitung rata-rata tiap cluster asli untuk menentukan urutan
             cluster_means = df_clustered.groupby('Cluster')['Qty_2022_2025'].mean().sort_values()
+            
+            # Buat mapping dari ID cluster lama ke urutan baru (0 = terkecil, dst)
             mapping = {old_id: i for i, (old_id, _) in enumerate(cluster_means.items())}
             
+            # Urutkan label agar sesuai dengan urutan mean yang baru[cite: 1]
+            sorted_labels = [new_label_map[old_id] for old_id, _ in cluster_means.items()]
+            final_label_map = {i: label for i, label in enumerate(sorted_labels)}
+            
+            # Terapkan ke DataFrame[cite: 1]
             df_clustered['Cluster'] = df_clustered['Cluster'].map(mapping)
-            df_clustered['Kategori'] = df_clustered['Cluster'].map(new_label_map)
+            df_clustered['Kategori'] = df_clustered['Cluster'].map(final_label_map)
             # -------------------------
 
             state.set("kmeans_model", model)
             state.set("df_clustered", df_clustered)
             state.set("df_distances", df_dist)
             state.set("silhouette_score", sil)
-            state.set("cluster_labels", new_label_map)
+            state.set("cluster_labels", final_label_map) # Simpan map yang sudah urut[cite: 1]
             state.set("cluster_done", True)
+            
             st.success(f"✅ Berhasil! Silhouette: {sil:.4f}")
         except Exception as e:
             st.error(f"Error: {e}")
