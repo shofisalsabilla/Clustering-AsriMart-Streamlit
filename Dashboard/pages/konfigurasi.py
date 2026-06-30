@@ -36,12 +36,7 @@ def show():
     )
     state.set("n_clusters", n_clusters)
     
-    # Logika label yang diperbaiki:
-    # k=2: ["Kurang Laris", "Laris"]
-    # k=3: ["Kurang Laris", "Sedang", "Laris"]
-    # k=4: ["Kurang Laris", "Sedang", "Laris", "Sangat Laris"]
-    # k=5: ["Sangat Rendah", "Kurang Laris", "Sedang", "Laris", "Sangat Laris"]
-    
+    # Logika label sesuai permintaan Anda
     if n_clusters == 2:
         default_labels = ["Kurang Laris", "Laris"]
     elif n_clusters == 3:
@@ -53,9 +48,15 @@ def show():
     
     cols = st.columns(n_clusters)
     new_label_map = {}
+    
+    # PENTING: Menambahkan n_clusters pada key agar text_input ter-reset saat k diubah
     for i in range(n_clusters):
         with cols[i]:
-            new_label_map[i] = st.text_input(f"Rank {i+1}:", value=default_labels[i], key=f"label_{i}")
+            new_label_map[i] = st.text_input(
+                f"Rank {i+1}:", 
+                value=default_labels[i], 
+                key=f"label_{n_clusters}_{i}" 
+            )
 
     if st.button("🚀 Jalankan K-Means", type="primary", use_container_width=True):
         try:
