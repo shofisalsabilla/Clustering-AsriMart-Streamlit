@@ -26,13 +26,11 @@ def show():
     col_control, col_graph = st.columns([1, 2])
     with col_control:
         k_max = st.slider("Batas maksimum k:", min_value=5, max_value=15, value=10)
-        # Jika tombol ditekan, update state wcss
         if st.button("🔍 Hitung Elbow Method"):
             wcss_data = clustering.compute_elbow(df_scaled, k_max)
             state.set("wcss", wcss_data)
             
     with col_graph:
-        # Menampilkan grafik jika wcss tersedia di state
         wcss = state.get("wcss")
         if wcss is not None:
             k_values = range(1, len(wcss) + 1)
@@ -67,35 +65,35 @@ def show():
     
     cols = st.columns(n_clusters)
     new_label_map = {}
-    
     for i in range(n_clusters):
         with cols[i]:
-            new_label_map[i] = st.text_input(
-                f"Rank {i+1}:", 
-                value=default_labels[i], 
-                key=f"label_{n_clusters}_{i}" 
-            )
+            new_label_map[i] = st.text_input(f"Rank {i+1}:", value=default_labels[i], key=f"label_{n_clusters}_{i}")
 
-    # 3. Jalankan K-Means
+    # 3. Jalankan K-Means dengan Urutan yang Benar
     if st.button("🚀 Jalankan K-Means", type="primary", use_container_width=True):
         try:
             model, df_clustered, df_dist, sil, _ = clustering.run_kmeans(df_scaled, n_clusters, new_label_map)
             
+            # --- LOGIKA PENGURUTAN AGAR "LARIS" SELALU TERTINGGI ---
+            # Menghitung rata-rata Qty per cluster dan mengurutkannya
             cluster_means = df_clustered.groupby('Cluster')['Qty_2022_2025'].mean().sort_values()
-            mapping = {old_id: i for i, (old_id, _) in enumerate(cluster_means.items())}
             
-            sorted_label_list = [new_label_map[old_id] for old_id, _ in cluster_means.items()]
-            final_label_map = {i: label for i, label in enumerate(sorted_label_list)}
+            # Membuat pemetaan cluster agar 0 = Qty terendah, dst.
+            mapping = {old_id: new_id for new_id, (old_id, _) in enumerate(cluster_means.items())}
             
+            # Terapkan pemetaan ke dataframe
             df_clustered['Cluster'] = df_clustered['Cluster'].map(mapping)
-            df_clustered['Kategori'] = df_clustered['Cluster'].map(final_label_map)
+            
+            # Terapkan label user ke cluster yang sudah terurut
+            df_clustered['Kategori'] = df_clustered['Cluster'].map(new_label_map)
+            # --------------------------------------------------------
             
             state.set("kmeans_model", model)
             state.set("df_clustered", df_clustered)
             state.set("df_distances", df_dist)
             state.set("silhouette_score", sil)
-            state.set("cluster_labels", final_label_map)
+            state.set("cluster_labels", new_label_map)
             state.set("cluster_done", True)
-            st.success(f"✅ Berhasil! Silhouette: {sil:.4f}")
+            st.success(f"✅ Berhasil! Hasil clustering telah diurutkan. Silhouette: {sil:.4f}")
         except Exception as e:
             st.error(f"Error: {e}")
