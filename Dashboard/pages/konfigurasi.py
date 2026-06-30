@@ -1,43 +1,71 @@
 import streamlit as st
-import pandas as pd
-import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
-from sklearn.cluster import KMeans
-from sklearn.preprocessing import StandardScaler
+matplotlib.use("Agg")
+from utils import state, clustering
 
-# Konfigurasi halaman
-st.set_page_config(page_title="Asri Mart Clustering", layout="wide")
+def show():
+    state.init_state()
 
-# Simulasi fungsi clustering (Jika belum ada di file terpisah)
-def run_kmeans(df, n_clusters, labels):
-    kmeans = KMeans(n_clusters=n_clusters, random_state=42)
-    clusters = kmeans.fit_predict(df)
-    # Ini fungsi dummy agar kode jalan, sesuaikan dengan logic di utils Anda
-    return kmeans, pd.DataFrame(df, columns=['Qty_2022_2025']), None, 0.7565, None
+    st.markdown("## ⚙️ Konfigurasi Clustering")
 
-st.title("⚙️ Konfigurasi Clustering")
+    if not state.get("upload_done"):
+        st.warning("⚠️ Harap selesaikan **Upload & Preprocessing** terlebih dahulu.")
+        return
 
-# 1. Input K
-n_clusters = st.number_input("Masukkan nilai k (2-5):", min_value=2, max_value=5, value=3)
+    df_scaled = state.get("df_scaled")
 
-# 2. Label Dinamis Sesuai Permintaan
-if n_clusters == 2:
-    default_labels = ["Kurang Laris", "Laris"]
-elif n_clusters == 3:
-    default_labels = ["Kurang Laris", "Sedang", "Laris"]
-elif n_clusters == 4:
-    default_labels = ["Kurang Laris", "Sedang", "Laris", "Sangat Laris"]
-else: # n_clusters == 5
-    default_labels = ["Sangat Rendah", "Kurang Laris", "Sedang", "Laris", "Sangat Laris"]
+    st.markdown("### 📉 Metode Elbow")
+    col_control, col_graph = st.columns([1, 2])
+    with col_control:
+        k_max = st.slider("Batas maksimum k:", min_value=5, max_value=15, value=10)
+        if st.button("🔍 Hitung Elbow Method"):
+            state.set("wcss", clustering.compute_elbow(df_scaled, k_max))
+    with col_graph:
+        if state.get("wcss"):
+            fig, ax = plt.subplots(figsize=(9, 4))
+            ax.plot(range(1, len(state.get("wcss")) + 1), state.get("wcss"), marker='o', color='#4fc3f7')
+            st.pyplot(fig)
 
-cols = st.columns(n_clusters)
-new_label_map = {}
-for i in range(n_clusters):
-    with cols[i]:
-        new_label_map[i] = st.text_input(f"Rank {i+1}:", value=default_labels[i], key=f"label_{i}")
+    st.markdown("---")
+    n_clusters = st.number_input(
+        "Masukkan nilai k (2-5):", 
+        min_value=2, 
+        max_value=5, 
+        value=state.get("n_clusters") or 3
+    )
+    state.set("n_clusters", n_clusters)
+    
+    if n_clusters == 2:
+        default_labels = ["Kurang Laris", "Laris"]
+    elif n_clusters == 3:
+        default_labels = ["Kurang Laris", "Sedang", "Laris"]
+    elif n_clusters == 4:
+        default_labels = ["Kurang Laris", "Sedang", "Laris", "Sangat Laris"]
+    else: 
+        default_labels = ["Sangat Rendah", "Kurang Laris", "Sedang", "Laris", "Sangat Laris"]
+    
+    cols = st.columns(n_clusters)
+    new_label_map = {}
+    for i in range(n_clusters):
+        with cols[i]:
+            new_label_map[i] = st.text_input(f"Rank {i+1}:", value=default_labels[i], key=f"label_{i}")
 
-# 3. Tombol Jalankan
-if st.button("🚀 Jalankan K-Means", type="primary"):
-    st.success(f"Berhasil menjalankan K-Means dengan k={n_clusters}")
-    st.write("Label yang digunakan:", new_label_map)
+    if st.button("🚀 Jalankan K-Means", type="primary", use_container_width=True):
+        try:
+            model, df_clustered, df_dist, sil, _ = clustering.run_kmeans(df_scaled, n_clusters, new_label_map)
+            cluster_means = df_clustered.groupby('Cluster')['Qty_2022_2025'].mean().sort_values()
+            mapping = {old_id: i for i, (old_id, _) in enumerate(cluster_means.items())}
+            sorted_label_list = [new_label_map[old_id] for old_id, _ in cluster_means.items()]
+            final_label_map = {i: label for i, label in enumerate(sorted_label_list)}
+            df_clustered['Cluster'] = df_clustered['Cluster'].map(mapping)
+            df_clustered['Kategori'] = df_clustered['Cluster'].map(final_label_map)
+            state.set("kmeans_model", model)
+            state.set("df_clustered", df_clustered)
+            state.set("df_distances", df_dist)
+            state.set("silhouette_score", sil)
+            state.set("cluster_labels", final_label_map)
+            state.set("cluster_done", True)
+            st.success(f"✅ Berhasil! Silhouette: {sil:.4f}")
+        except Exception as e:
+            st.error(f"Error: {e}")
