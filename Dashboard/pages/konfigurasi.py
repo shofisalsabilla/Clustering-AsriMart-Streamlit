@@ -15,18 +15,33 @@ def show():
 
     df_scaled = state.get("df_scaled")
 
+    # 1. Metode Elbow dengan Narasi Baru
     st.markdown("### 📉 Metode Elbow")
+    st.info("""
+    Metode Elbow menunjukkan titik di mana penurunan nilai SSE (Inertia) mulai melambat secara signifikan, 
+    membentuk sudut seperti **"siku"**. Nilai k pada titik siku tersebut dianggap sebagai jumlah 
+    cluster yang optimal untuk data tersebut.
+    """)
+
     col_control, col_graph = st.columns([1, 2])
     with col_control:
         k_max = st.slider("Batas maksimum k:", min_value=5, max_value=15, value=10)
         if st.button("🔍 Hitung Elbow Method"):
             state.set("wcss", clustering.compute_elbow(df_scaled, k_max))
+    
     with col_graph:
         if state.get("wcss"):
-            fig, ax = plt.subplots(figsize=(9, 4))
-            ax.plot(range(1, len(state.get("wcss")) + 1), state.get("wcss"), marker='o', color='#4fc3f7')
+            wcss = state.get("wcss")
+            k_values = range(1, len(wcss) + 1)
+            fig, ax = plt.subplots(figsize=(8, 4))
+            ax.plot(k_values, wcss, marker='o', linestyle='-', color='#007acc', linewidth=2, markersize=6)
+            ax.set_title("Elbow Method Analysis", fontsize=12)
+            ax.set_xlabel("Jumlah Cluster (k)")
+            ax.set_ylabel("Inertia (SSE)")
+            ax.grid(True, linestyle='--', alpha=0.6)
             st.pyplot(fig)
 
+    # 2. Input Label
     st.markdown("---")
     n_clusters = st.number_input(
         "Masukkan nilai k (2-5):", 
@@ -36,7 +51,6 @@ def show():
     )
     state.set("n_clusters", n_clusters)
     
-    # Logika label sesuai permintaan Anda
     if n_clusters == 2:
         default_labels = ["Kurang Laris", "Laris"]
     elif n_clusters == 3:
@@ -49,7 +63,7 @@ def show():
     cols = st.columns(n_clusters)
     new_label_map = {}
     
-    # PENTING: Menambahkan n_clusters pada key agar text_input ter-reset saat k diubah
+    # Key unik berdasarkan k memastikan input ter-reset
     for i in range(n_clusters):
         with cols[i]:
             new_label_map[i] = st.text_input(
@@ -58,6 +72,7 @@ def show():
                 key=f"label_{n_clusters}_{i}" 
             )
 
+    # 3. Jalankan K-Means
     if st.button("🚀 Jalankan K-Means", type="primary", use_container_width=True):
         try:
             model, df_clustered, df_dist, sil, _ = clustering.run_kmeans(df_scaled, n_clusters, new_label_map)
