@@ -31,15 +31,27 @@ def show():
     model = state.get("kmeans_model")
     sil = state.get("silhouette_score")
 
-    # Silhouette Score
+    # 1. Silhouette Score dengan Narasi
     st.markdown("<div class='section-title'>📏 Evaluasi Silhouette Score</div>", unsafe_allow_html=True)
     col1, col2, col3 = st.columns(3)
     col1.metric("Silhouette Score", f"{sil:.4f}")
     col2.metric("Jumlah Cluster", state.get("n_clusters"))
     col3.metric("Total Barang Dianalisis", len(df_clustered))
+    
+    st.markdown("""
+    <div style='background-color: rgba(255, 255, 255, 0.05); padding: 15px; border-radius: 10px; border-left: 5px solid #3498db; margin-top: 20px;'>
+        <strong>Interpretasi:</strong> Silhouette Score mengukur seberapa baik setiap titik data ditempatkan dalam clusternya dibandingkan dengan cluster tetangga. 
+        Nilai berkisar antara <strong>-1 hingga 1</strong>:
+        <ul style='margin-bottom: 0;'>
+            <li>Nilai mendekati <strong>1</strong>: Clustering sangat baik dan terdefinisi dengan jelas.</li>
+            <li>Nilai mendekati <strong>0</strong>: Cluster saling tumpang tindih (overlap).</li>
+            <li>Nilai negatif: Data mungkin salah ditempatkan ke dalam cluster.</li>
+        </ul>
+    </div>
+    """, unsafe_allow_html=True)
     st.markdown("---")
 
-    # ── ROW 1: Scatter Plot PCA & Bar Chart Rata-rata ─────────
+    # 2. ROW 1: Scatter Plot PCA & Bar Chart Rata-rata
     col_kiri, col_kanan = st.columns(2)
 
     with col_kiri:
@@ -69,7 +81,7 @@ def show():
         ax.tick_params(colors='#b0c4de'); ax.spines[['top', 'right', 'bottom', 'left']].set_color('#2a4a7f')
         ax.grid(True, linestyle='--', alpha=0.3, color='#4a6080'); ax.legend(facecolor='#1a2a3a', labelcolor='white')
         st.pyplot(fig); plt.close(fig)
-        st.info("Visualisasi ini menampilkan data dalam bentuk 2 dimensi menggunakan PCA, sehingga lebih mudah dilihat bagaimana produk-produk dikelompokkan oleh model berdasarkan kemiripan pola penjualannya.")
+        st.info("Visualisasi ini memetakan produk dalam ruang 2D menggunakan PCA untuk memperlihatkan pemisahan antar cluster.")
 
     with col_kanan:
         st.markdown("<div class='section-title'>📊 Bar Chart Rata-rata Qty</div>", unsafe_allow_html=True)
@@ -84,11 +96,11 @@ def show():
         ax.set_xlabel('Rata-rata Qty (Total 2022-2025)', color='#b0c4de'); ax.tick_params(colors='#b0c4de')
         ax.spines[['top', 'right', 'bottom', 'left']].set_color('#2a4a7f'); ax.grid(axis='x', linestyle='--', alpha=0.3, color='#4a6080')
         st.pyplot(fig); plt.close(fig)
-        st.info("Grafik ini menunjukkan performa rata-rata qty penjualan di setiap cluster dan membantu untuk mengidentifikasi karakteristik tiap segmen apakah cenderung 'laris' atau 'kurang laris'.")
+        st.info("Grafik ini membantu membedakan karakteristik tiap segmen berdasarkan volume rata-rata penjualan.")
 
     st.markdown("---")
     
-    # ── ROW 2: Distribusi & Top 10 Terlaris ──────────────
+    # 3. ROW 2: Distribusi & Top 10 Terlaris
     col_dist, col_top = st.columns(2)
     with col_dist:
         st.markdown("<div class='section-title'>📦 Distribusi Cluster</div>", unsafe_allow_html=True)
@@ -99,7 +111,7 @@ def show():
         ax.pie(dist.values, labels=labels, autopct='%1.1f%%', colors=PALETTE[:len(dist)], textprops={'color': 'white', 'fontsize': 9})
         ax.set_title('Proporsi & Jumlah Produk per Cluster', color='white', fontsize=12, fontweight='bold')
         st.pyplot(fig); plt.close(fig)
-        st.info("Menampilkan proporsi jumlah produk di setiap cluster untuk memberikan gambaran keseimbangan segmentasi yang dihasilkan oleh model.")
+        st.info("Menampilkan keseimbangan jumlah produk di setiap kelompok.")
 
     with col_top:
         st.markdown("<div class='section-title'>🏆 Top 10 Terlaris</div>", unsafe_allow_html=True)
@@ -113,4 +125,4 @@ def show():
         ax.set_xlabel('Total Qty Terjual', color='#b0c4de'); ax.tick_params(colors='#b0c4de')
         ax.spines[['top', 'right', 'bottom', 'left']].set_color('#2a4a7f'); ax.grid(axis='x', linestyle='--', alpha=0.3, color='#4a6080')
         st.pyplot(fig); plt.close(fig)
-        st.info("Daftar 10 produk dengan qty penjualan tertinggi selama tahun 2022-2025, yang merupakan aset paling berharga dalam inventaris.")
+        st.info("10 produk dengan performa penjualan tertinggi selama periode 2022-2025.")
