@@ -19,13 +19,15 @@ def show():
         st.warning("⚠️ Harap selesaikan **Konfigurasi Clustering** dan jalankan K-Means terlebih dahulu.")
         return
 
+    # Mengambil data dari state
     df_clustered = state.get("df_clustered")
     df_distances = state.get("df_distances")
     model        = state.get("kmeans_model")
     df_agg       = state.get("df_agg")
     label_map    = state.get("cluster_labels")
-    scaler       = state.get("scaler") # Pastikan scaler tersimpan di state
+    scaler       = state.get("scaler") 
 
+    # Penggabungan data untuk analisis
     df_full = df_clustered.merge(df_agg, on='Nama Barang', suffixes=('_norm', ''))
     summary = df_full.groupby('Kategori').agg(
         Jumlah_Barang=('Nama Barang', 'count'),
@@ -34,20 +36,25 @@ def show():
         Max_Qty=('Qty_2022_2025', 'max'),
     ).reset_index().sort_values('Rata_Qty')
 
-    # ── 1 & 2. Ringkasan Cluster & Centroid (SEJAJAR) ─────────
+    # 1 & 2. Ringkasan Cluster & Centroid
     col_kiri, col_kanan = st.columns([2, 1])
     
     with col_kiri:
         st.markdown("<div class='section-title'>📌 Ringkasan Cluster</div>", unsafe_allow_html=True)
-        colors = {"Laris": "#27ae60", "Sedang": "#f39c12", "Kurang Laris": "#e74c3c"}
+        # Warna dinamis berdasarkan kategori
+        def get_color(kategori):
+            if kategori in ["Sangat Laris", "Laris"]: return "#27ae60"
+            if kategori == "Sedang": return "#f39c12"
+            return "#e74c3c"
+
         cols_grid = st.columns(len(summary))
         for col, (_, row) in zip(cols_grid, summary.iterrows()):
-            c = colors.get(row['Kategori'], "#3498db")
+            c = get_color(row['Kategori'])
             col.markdown(f"""
             <div style='background:rgba(255,255,255,0.04); border:1px solid {c};
                         border-radius:12px; padding:16px; text-align:center;'>
                 <div style='font-size:2rem; font-weight:800; color:{c};'>{row['Jumlah_Barang']}</div>
-                <div style='font-weight:700; color:{c}; font-size:1rem;'>{row['Kategori']}</div>
+                <div style='font-weight:700; color:{c}; font-size:0.9rem;'>{row['Kategori']}</div>
             </div>
             """, unsafe_allow_html=True)
 
@@ -57,17 +64,15 @@ def show():
         df_means = df_clustered.groupby('Cluster')['Qty_2022_2025'].mean().sort_values()
         
         for cid, _ in df_means.items():
-            # Mengembalikan centroid ke skala asli agar tidak muncul 0,xxx
             centroid_norm = model.cluster_centers_[cid].reshape(1, -1)
             centroid_asli = scaler.inverse_transform(centroid_norm)[0][0]
-            
             centroid_data.append({
                 "Kategori": label_map.get(cid, f"Cluster {cid}"), 
                 "Centroid": round(centroid_asli, 0)
             })
         st.table(pd.DataFrame(centroid_data))
 
-    # ── 3 & 4. Tabel Hasil & Rekomendasi (SEJAJAR) ─────────
+    # 3 & 4. Tabel Hasil & Rekomendasi
     st.markdown("---")
     col_tabel, col_rek = st.columns([2, 1])
 
@@ -79,47 +84,42 @@ def show():
         df_show.rename(columns={'Qty_2022_2025': 'Total Qty (Asli)'}, inplace=True)
         if selected_cat != "Semua": df_show = df_show[df_show['Kategori'] == selected_cat]
         
-        # Menampilkan data dengan format angka asli
         st.dataframe(df_show.sort_values('Total Qty (Asli)', ascending=False).reset_index(drop=True), use_container_width=True, height=400)
         st.caption(f"Menampilkan {len(df_show):,} barang")
 
     with col_rek:
         st.markdown("<div class='section-title'>📝 Ringkasan Eksekutif & Strategi</div>", unsafe_allow_html=True)
         REKOMENDASI = {
-            "Laris": ["Prioritaskan ketersediaan stok.", "Jadikan produk sebagai fokus pemasaran.", "Pertahankan kualitas produk dan layanan."],
-            "Sedang": ["Pertahankan performa penjualan yang stabil.", "Lakukan promosi secara berkala.", "Pantau perkembangan permintaan pasar."],
-            "Kurang Laris": ["Tingkatkan promosi untuk mendorong minat beli.", "Evaluasi strategi pemasaran dan penempatan produk.", "Pantau penjualan secara berkala."],
+            "Sangat Laris": ["Prioritas stok utama (jangan sampai kosong).", "Gunakan sebagai produk bundling.", "Perluas area pajang."],
+            "Laris": ["Pertahankan stok optimal.", "Jadikan fokus pemasaran utama.", "Pantau kualitas produk."],
+            "Sedang": ["Pertahankan penjualan stabil.", "Promosi berkala.", "Analisis tren pasar."],
+            "Kurang Laris": ["Evaluasi penempatan rak.", "Tingkatkan promosi/diskon.", "Kurangi variasi stok."],
+            "Sangat Rendah": ["Diskon cuci gudang (clearance).", "Pertimbangkan ganti produk.", "Evaluasi kelayakan jual."]
         }
-        for _, row in summary.sort_values('Jumlah_Barang', ascending=False).iterrows():
+        
+        # Iterasi berdasarkan Rata_Qty dari besar ke kecil
+        for _, row in summary.sort_values('Rata_Qty', ascending=False).iterrows():
             kategori = row['Kategori']
-            c = colors.get(kategori, "#3498db")
+            c = get_color(kategori)
             poin = REKOMENDASI.get(kategori, ["Pantau perkembangan berkala."])
             list_html = "".join([f"<li style='margin-bottom:4px; color:#000000;'>{p}</li>" for p in poin])
+            
             st.markdown(f"""
             <div style='background:#ffffff; border-left:4px solid {c}; border-radius:10px; padding:14px 18px; margin-bottom:12px;'>
-                <div style='font-weight:700; color:{c}; font-size:1.05rem;'>{kategori}</div>
-                <div style='color:#000000; font-size:0.9rem; margin-top:8px;'>
+                <div style='font-weight:700; color:{c}; font-size:1rem;'>{kategori}</div>
+                <div style='color:#000000; font-size:0.85rem; margin-top:8px;'>
                     <ul style='margin:6px 0 0 18px; padding:0;'>{list_html}</ul>
                 </div>
             </div>
             """, unsafe_allow_html=True)
 
-    # ── 5. Jarak Euclidean ───────────────────────────────────────────
+    # 5. Jarak Euclidean & Download
     st.markdown("---")
     st.markdown("<div class='section-title'>📐 Jarak Euclidean ke Centroid</div>", unsafe_allow_html=True)
     st.dataframe(df_distances.head(50), use_container_width=True)
 
-    # ── 6. Download CSV ──────────────────────────────────────────────
     st.markdown("---")
-    st.markdown("<div class='section-title'>⬇️ Unduh Laporan</div>", unsafe_allow_html=True)
-    df_export = df_full[['Nama Barang', 'Qty_2022_2025', 'Cluster', 'Kategori']].copy()
-    df_export.rename(columns={'Qty_2022_2025': 'Total Qty (Asli)'}, inplace=True)
-    csv = df_export.to_csv(index=False).encode('utf-8')
-    st.download_button(
-        label="⬇️ Download Hasil Clustering (.csv)",
-        data=csv,
-        file_name=f"hasil_clustering_toko_asri_mart_{datetime.now().strftime('%Y%m%d_%H%M')}.csv",
-        mime="text/csv",
-        use_container_width=True,
-        type="primary"
-    )
+    csv = df_full[['Nama Barang', 'Qty_2022_2025', 'Kategori']].to_csv(index=False).encode('utf-8')
+    st.download_button("⬇️ Download Hasil Clustering (.csv)", data=csv, 
+                       file_name=f"hasil_asri_mart_{datetime.now().strftime('%Y%m%d')}.csv", 
+                       use_container_width=True, type="primary")
