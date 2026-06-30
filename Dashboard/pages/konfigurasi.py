@@ -38,7 +38,7 @@ def show():
     )
     state.set("n_clusters", n_clusters)
     
-    # Logika label dinamis sesuai permintaan
+    # Logika label dinamis disesuaikan dengan permintaan
     if n_clusters == 2:
         default_labels = ["Kurang Laris", "Laris"]
     elif n_clusters == 3:
@@ -61,7 +61,7 @@ def show():
             model, df_clustered, df_dist, sil, _ = clustering.run_kmeans(df_scaled, n_clusters, new_label_map)
             
             # --- LOGIKA PENGURUTAN ---
-            # Hitung rata-rata tiap cluster asli untuk menentukan urutan[cite: 1]
+            # Hitung rata-rata tiap cluster untuk menentukan urutan[cite: 1]
             cluster_means = df_clustered.groupby('Cluster')['Qty_2022_2025'].mean().sort_values()
             
             # Buat mapping dari ID cluster lama ke urutan baru (0 = terkecil, dst)[cite: 1]
