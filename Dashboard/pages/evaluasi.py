@@ -84,7 +84,7 @@ def show():
         ax.set_xlabel('Rata-rata Qty (Total 2022-2025)', color='#b0c4de'); ax.tick_params(colors='#b0c4de')
         ax.spines[['top', 'right', 'bottom', 'left']].set_color('#2a4a7f'); ax.grid(axis='x', linestyle='--', alpha=0.3, color='#4a6080')
         st.pyplot(fig); plt.close(fig)
-        st.info("Grafik ini menunjukkan performa rata-rata qty penjualan di setiap cluster dan membantu untuk mengidentifikasi karakteristik tiap segmen apakah cenderung 'laris', 'sedang' atau 'kurang laris'.")
+        st.info("Grafik ini menunjukkan performa rata-rata qty penjualan di setiap cluster dan membantu untuk mengidentifikasi karakteristik tiap segmen apakah cenderung 'laris' atau 'kurang laris'.")
 
     st.markdown("---")
     
