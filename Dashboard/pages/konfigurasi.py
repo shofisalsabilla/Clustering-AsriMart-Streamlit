@@ -7,7 +7,7 @@ from utils import state, clustering
 def show():
     state.init_state()
 
-    st.markdown("<div class='main-header'><h2 style='margin:0; color:white;'>⚙️ Konfigurasi Clustering</h2></div>", unsafe_allow_html=True)
+    st.markdown("<div class='main-header'><h2 style='margin:0; color:white;'>⚙️ Konfigurasi Clustering</h2></div>", unsafe_html=True)
 
     if not state.get("upload_done"):
         st.warning("⚠️ Harap selesaikan **Upload & Preprocessing** terlebih dahulu.")
@@ -16,7 +16,7 @@ def show():
     df_scaled = state.get("df_scaled")
 
     # 1. Elbow Method
-    st.markdown("<div class='section-title'>📉 Metode Elbow</div>", unsafe_allow_html=True)
+    st.markdown("<div class='section-title'>📉 Metode Elbow</div>", unsafe_html=True)
     col_control, col_graph = st.columns([1, 2])
     with col_control:
         k_max = st.slider("Batas maksimum k:", min_value=5, max_value=15, value=10)
@@ -60,16 +60,16 @@ def show():
             # Jalankan K-Means
             model, df_clustered, df_dist, sil, _ = clustering.run_kmeans(df_scaled, n_clusters, new_label_map)
             
-            # --- LOGIKA PENGURUTAN ---
-            # Hitung rata-rata tiap cluster untuk menentukan urutan[cite: 1]
+            # --- LOGIKA PENGURUTAN KETAT ---
+            # Hitung rata-rata Qty tiap cluster asli[cite: 1]
             cluster_means = df_clustered.groupby('Cluster')['Qty_2022_2025'].mean().sort_values()
             
             # Buat mapping dari ID cluster lama ke urutan baru (0 = terkecil, dst)[cite: 1]
             mapping = {old_id: i for i, (old_id, _) in enumerate(cluster_means.items())}
             
             # Urutkan label agar sesuai dengan urutan mean yang baru[cite: 1]
-            sorted_labels = [new_label_map[old_id] for old_id, _ in cluster_means.items()]
-            final_label_map = {i: label for i, label in enumerate(sorted_labels)}
+            sorted_label_list = [new_label_map[old_id] for old_id, _ in cluster_means.items()]
+            final_label_map = {i: label for i, label in enumerate(sorted_label_list)}
             
             # Terapkan ke DataFrame[cite: 1]
             df_clustered['Cluster'] = df_clustered['Cluster'].map(mapping)
@@ -83,6 +83,6 @@ def show():
             state.set("cluster_labels", final_label_map) # Simpan map yang sudah urut[cite: 1]
             state.set("cluster_done", True)
             
-            st.success(f"✅ Berhasil! Silhouette: {sil:.4f}")
+            st.success(f"✅ Berhasil! Cluster diurutkan berdasarkan rata-rata Qty. Silhouette: {sil:.4f}")
         except Exception as e:
             st.error(f"Error: {e}")
