@@ -7,8 +7,9 @@ from utils import state, clustering
 def show():
     state.init_state()
 
-    # Mengembalikan desain header ke format asli
-    st.markdown("<div class='main-header'><h2 style='margin:0; color:white;'>⚙️ Konfigurasi Clustering</h2></div>", unsafe_html=True)
+    # Perbaikan: Gunakan st.container dengan class untuk styling jika memungkinkan,
+    # namun agar aman dari TypeError, kita gunakan penulisan Markdown yang bersih.
+    st.markdown("## ⚙️ Konfigurasi Clustering")
 
     if not state.get("upload_done"):
         st.warning("⚠️ Harap selesaikan **Upload & Preprocessing** terlebih dahulu.")
@@ -16,8 +17,8 @@ def show():
 
     df_scaled = state.get("df_scaled")
 
-    # 1. Elbow Method (Desain kembali ke format asli)
-    st.markdown("<div class='section-title'>📉 Metode Elbow</div>", unsafe_html=True)
+    # 1. Metode Elbow
+    st.markdown("### 📉 Metode Elbow")
     col_control, col_graph = st.columns([1, 2])
     with col_control:
         k_max = st.slider("Batas maksimum k:", min_value=5, max_value=15, value=10)
