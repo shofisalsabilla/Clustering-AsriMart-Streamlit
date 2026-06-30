@@ -5,11 +5,10 @@ matplotlib.use("Agg")
 from utils import state, clustering
 
 def show():
-    # 1. Inisialisasi state harus dipastikan berjalan dengan benar
     state.init_state()
 
-    # 2. Gunakan penulisan Markdown standar untuk menghindari konflik HTML
-    st.markdown("## ⚙️ Konfigurasi Clustering")
+    # Mengembalikan desain header ke format asli
+    st.markdown("<div class='main-header'><h2 style='margin:0; color:white;'>⚙️ Konfigurasi Clustering</h2></div>", unsafe_html=True)
 
     if not state.get("upload_done"):
         st.warning("⚠️ Harap selesaikan **Upload & Preprocessing** terlebih dahulu.")
@@ -17,8 +16,8 @@ def show():
 
     df_scaled = state.get("df_scaled")
 
-    # 3. Metode Elbow
-    st.markdown("### 📉 Metode Elbow")
+    # 1. Elbow Method (Desain kembali ke format asli)
+    st.markdown("<div class='section-title'>📉 Metode Elbow</div>", unsafe_html=True)
     col_control, col_graph = st.columns([1, 2])
     with col_control:
         k_max = st.slider("Batas maksimum k:", min_value=5, max_value=15, value=10)
@@ -30,7 +29,7 @@ def show():
             ax.plot(range(1, len(state.get("wcss")) + 1), state.get("wcss"), marker='o', color='#4fc3f7')
             st.pyplot(fig)
 
-    # 4. Input Label Dinamis
+    # 2. Input Label dengan Logika Dinamis (Koreksi Penamaan)
     st.markdown("---")
     n_clusters = st.number_input(
         "Masukkan nilai k (2-5):", 
@@ -40,15 +39,15 @@ def show():
     )
     state.set("n_clusters", n_clusters)
     
-    # Logika label disesuaikan permintaan
+    # Koreksi penamaan label sesuai permintaan
     if n_clusters == 2:
         default_labels = ["Kurang Laris", "Laris"]
     elif n_clusters == 3:
-        default_labels = ["Kurang Laris", "Sedang", "Laris"]
+        default_labels = ["Kurang Laris", "Laris", "Sangat Laris"]
     elif n_clusters == 4:
-        default_labels = ["Kurang Laris", "Sedang", "Laris", "Sangat Laris"]
-    else: 
-        default_labels = ["Sangat Rendah", "Kurang Laris", "Sedang", "Laris", "Sangat Laris"]
+        default_labels = ["Sangat Rendah", "Kurang Laris", "Laris", "Sangat Laris"]
+    else: # n_clusters == 5
+        default_labels = ["Sangat Rendah", "Rendah", "Kurang Laris", "Laris", "Sangat Laris"]
     
     cols = st.columns(min(n_clusters, 5))
     new_label_map = {}
@@ -56,12 +55,11 @@ def show():
         with cols[i % min(n_clusters, 5)]:
             new_label_map[i] = st.text_input(f"Rank {i+1}:", value=default_labels[i], key=f"label_{i}")
 
-    # 5. Jalankan K-Means
+    # 3. Jalankan K-Means dengan Pengurutan (Logic tetap konsisten)
     if st.button("🚀 Jalankan K-Means", type="primary", use_container_width=True):
         try:
             model, df_clustered, df_dist, sil, _ = clustering.run_kmeans(df_scaled, n_clusters, new_label_map)
             
-            # Logika pengurutan rata-rata
             cluster_means = df_clustered.groupby('Cluster')['Qty_2022_2025'].mean().sort_values()
             mapping = {old_id: i for i, (old_id, _) in enumerate(cluster_means.items())}
             
