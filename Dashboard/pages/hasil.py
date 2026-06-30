@@ -39,14 +39,14 @@ def show():
     # 1 & 2. Ringkasan Cluster & Centroid
     col_kiri, col_kanan = st.columns([2, 1])
     
+    # Warna dinamis berdasarkan kategori
+    def get_color(kategori):
+        if kategori in ["Sangat Laris", "Laris"]: return "#27ae60"
+        if kategori == "Sedang": return "#f39c12"
+        return "#e74c3c"
+    
     with col_kiri:
         st.markdown("<div class='section-title'>📌 Ringkasan Cluster</div>", unsafe_allow_html=True)
-        # Warna dinamis berdasarkan kategori
-        def get_color(kategori):
-            if kategori in ["Sangat Laris", "Laris"]: return "#27ae60"
-            if kategori == "Sedang": return "#f39c12"
-            return "#e74c3c"
-
         cols_grid = st.columns(len(summary))
         for col, (_, row) in zip(cols_grid, summary.iterrows()):
             c = get_color(row['Kategori'])
@@ -91,22 +91,32 @@ def show():
         st.markdown("<div class='section-title'>📝 Rekomendasi/Strategi</div>", unsafe_allow_html=True)
         REKOMENDASI = {
             "Sangat Laris": ["Tingkatkan ketersediaan stok untuk menghindari kehabisan.", "Jadikan produk sebagai produk unggulan.", "Pertahankan strategi pemasaran yang efektif."],
-            "Laris": ["Prioritaskan ketersediaan stok stok.", "Jadikan fokus pemasaran.", "Pertahankan kualitas produk dan layanan."],
-            "Sedang": ["Pertahankan peforma penjualan yang stabil.", "Lakukan promosi secara berkala.", "Pantau perkembangan permintaan pasar."],
+            "Laris": ["Prioritaskan ketersediaan stok.", "Jadikan fokus pemasaran.", "Pertahankan kualitas produk dan layanan."],
+            "Sedang": ["Pertahankan performa penjualan yang stabil.", "Lakukan promosi secara berkala.", "Pantau perkembangan permintaan pasar."],
             "Kurang Laris": ["Tingkatkan promosi produk.", "Evaluasi strategi pemasaran yang digunakan.", "Pantau perkembangan penjualan secara berkala."],
             "Sangat Rendah": ["Evaluasi produk dengan tingkat penjualan terendah.", "Pertimbangkan pemberian diskon atau promosi.", "Kurangi prioritas pengadaan stok baru."]
         }
+        
+        # Mapping balik untuk mendapatkan ID Cluster dari Kategori
+        inv_label_map = {v: k for k, v in label_map.items()}
         
         # Iterasi berdasarkan Rata_Qty dari besar ke kecil
         for _, row in summary.sort_values('Rata_Qty', ascending=False).iterrows():
             kategori = row['Kategori']
             c = get_color(kategori)
+            cluster_id = inv_label_map.get(kategori, "?")
+            
             poin = REKOMENDASI.get(kategori, ["Pantau perkembangan berkala."])
             list_html = "".join([f"<li style='margin-bottom:4px; color:#000000;'>{p}</li>" for p in poin])
             
             st.markdown(f"""
             <div style='background:#ffffff; border-left:4px solid {c}; border-radius:10px; padding:14px 18px; margin-bottom:12px;'>
-                <div style='font-weight:700; color:{c}; font-size:1rem;'>{kategori}</div>
+                <div style='display: flex; justify-content: space-between; align-items: center;'>
+                    <div style='font-weight:700; color:{c}; font-size:1rem;'>{kategori}</div>
+                    <div style='background:{c}; color:white; padding:2px 8px; border-radius:10px; font-size:0.75rem; font-weight:bold;'>
+                        Cluster {cluster_id}
+                    </div>
+                </div>
                 <div style='color:#000000; font-size:0.85rem; margin-top:8px;'>
                     <ul style='margin:6px 0 0 18px; padding:0;'>{list_html}</ul>
                 </div>
