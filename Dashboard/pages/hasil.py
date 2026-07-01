@@ -94,11 +94,11 @@ def show():
     with col_rek:
         st.markdown("<div class='section-title'>📝 Rekomendasi/Strategi</div>", unsafe_allow_html=True)
         REKOMENDASI = {
-            "Sangat Laris": ["Tingkatkan ketersediaan stok.", "Jadikan produk unggulan.", "Pertahankan pemasaran efektif."],
-            "Laris": ["Prioritaskan ketersediaan stok.", "Jadikan fokus pemasaran.", "Pertahankan kualitas produk."],
-            "Sedang": ["Pertahankan performa stabil.", "Lakukan promosi berkala.", "Pantau permintaan pasar."],
-            "Kurang Laris": ["Tingkatkan promosi produk.", "Evaluasi strategi pemasaran.", "Pantau penjualan berkala."],
-            "Sangat Rendah": ["Evaluasi kelayakan jual.", "Pertimbangkan diskon/promosi.", "Kurangi pengadaan stok."]
+            "Sangat Laris": ["Tingkatkan ketersediaan stok untuk menghindari kehabisan.", "Jadikan produk sebagai produk unggulan.", "Pertahankan strategi pemasaran yang efektif."],
+            "Laris": ["Prioritaskan ketersediaan stok.", "Jadikan produk fokus pemasaran.", "Pertahankan kualitas produk dan layanan."],
+            "Sedang": ["Pertahankan performa penjualan yang stabil.", "Lakukan promosi secara berkala.", "Pantau perkembangan permintaan pasar."],
+            "Kurang Laris": ["Tingkatkan promosi produk.", "Evaluasi strategi pemasaran.", "Pantau penjualan secara berkala."],
+            "Sangat Rendah": ["Evaluasi produk dengan tingkat penjualan terendah.", "Pertimbangkan pemberian diskon/promosi.", "Kurangi pengadaan stok."]
         }
         
         inv_label_map = {v: k for k, v in label_map.items()}
