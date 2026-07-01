@@ -31,22 +31,37 @@ def show():
     model = state.get("kmeans_model")
     sil = state.get("silhouette_score")
 
-    # 1. Silhouette Score dengan Narasi
+    # 1. Silhouette Score dengan Narasi Dinamis
     st.markdown("<div class='section-title'>📏 Evaluasi Silhouette Score</div>", unsafe_allow_html=True)
     col1, col2, col3 = st.columns(3)
     col1.metric("Silhouette Score", f"{sil:.4f}")
     col2.metric("Jumlah Cluster", state.get("n_clusters"))
     col3.metric("Total Barang Dianalisis", len(df_clustered))
-    
-    st.markdown("""
-    <div style='background-color: rgba(255, 255, 255, 0.05); padding: 15px; border-radius: 10px; border-left: 5px solid #3498db; margin-top: 20px;'>
-        <strong>Interpretasi:</strong> Silhouette Score mengukur seberapa baik setiap titik data ditempatkan dalam clusternya dibandingkan dengan cluster tetangga. 
-        Nilai berkisar antara <strong>-1 hingga 1</strong>:
-        <ul style='margin-bottom: 0;'>
-            <li>Nilai mendekati <strong>1</strong>: Clustering sangat baik dan terdefinisi dengan jelas.</li>
-            <li>Nilai mendekati <strong>0</strong>: Cluster saling tumpang tindih (overlap).</li>
-            <li>Nilai negatif: Data mungkin salah ditempatkan ke dalam cluster.</li>
-        </ul>
+
+    # Logika Narasi Otomatis
+    if sil > 0.7:
+        kategori_skor = "Sangat Baik"
+        warna_skor = "#27ae60"
+        pesan = "Pengelompokan sangat solid dan terdefinisi dengan sangat jelas."
+    elif sil > 0.5:
+        kategori_skor = "Baik"
+        warna_skor = "#f39c12"
+        pesan = "Pengelompokan sudah cukup baik, meskipun mungkin ada sedikit tumpang tindih."
+    elif sil > 0.25:
+        kategori_skor = "Cukup"
+        warna_skor = "#e67e22"
+        pesan = "Hasil clustering moderat, pertimbangkan untuk menyesuaikan kembali jumlah cluster."
+    else:
+        kategori_skor = "Kurang Optimal"
+        warna_skor = "#e74c3c"
+        pesan = "Hasil clustering kurang optimal, kemungkinan besar terdapat banyak tumpang tindih data."
+
+    st.markdown(f"""
+    <div style='background-color: rgba(255, 255, 255, 0.05); padding: 15px; border-radius: 10px; border-left: 5px solid {warna_skor}; margin-top: 20px;'>
+        <h4 style='margin:0; color:{warna_skor};'>Hasil Evaluasi: {kategori_skor}</h4>
+        <p style='margin: 10px 0 0 0;'>
+            Skor sebesar <strong>{sil:.4f}</strong> mengindikasikan bahwa {pesan}
+        </p>
     </div>
     """, unsafe_allow_html=True)
     st.markdown("---")
@@ -56,7 +71,6 @@ def show():
 
     with col_kiri:
         st.markdown("<div class='section-title'>🔵 Scatter Plot PCA</div>", unsafe_allow_html=True)
-        st.markdown("**Visualisasi cluster dengan PCA 2D**")
         X = df_clustered[['Qty_2022_2025']]
         scaler_std = StandardScaler()
         X_scaled = scaler_std.fit_transform(X)
@@ -81,7 +95,7 @@ def show():
         ax.tick_params(colors='#b0c4de'); ax.spines[['top', 'right', 'bottom', 'left']].set_color('#2a4a7f')
         ax.grid(True, linestyle='--', alpha=0.3, color='#4a6080'); ax.legend(facecolor='#1a2a3a', labelcolor='white')
         st.pyplot(fig); plt.close(fig)
-        st.info("Visualisasi ini memetakan produk dalam ruang 2D menggunakan PCA untuk memperlihatkan pemisahan antar cluster.")
+        st.info("Memetakan produk dalam ruang 2D menggunakan PCA untuk memperlihatkan pemisahan antar cluster.")
 
     with col_kanan:
         st.markdown("<div class='section-title'>📊 Bar Chart Rata-rata Qty</div>", unsafe_allow_html=True)
@@ -96,7 +110,7 @@ def show():
         ax.set_xlabel('Rata-rata Qty (Total 2022-2025)', color='#b0c4de'); ax.tick_params(colors='#b0c4de')
         ax.spines[['top', 'right', 'bottom', 'left']].set_color('#2a4a7f'); ax.grid(axis='x', linestyle='--', alpha=0.3, color='#4a6080')
         st.pyplot(fig); plt.close(fig)
-        st.info("Grafik ini membantu membedakan karakteristik tiap segmen berdasarkan volume rata-rata penjualan.")
+        st.info("Membantu membedakan karakteristik tiap segmen berdasarkan volume rata-rata penjualan.")
 
     st.markdown("---")
     
