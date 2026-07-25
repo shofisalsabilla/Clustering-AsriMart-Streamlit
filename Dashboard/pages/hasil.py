@@ -36,15 +36,15 @@ def show():
     df_full = df_clustered.merge(df_agg, on='Nama Barang', suffixes=('_norm', ''))
 
     # =========================================================================
-    # MAP CLUSTER ID ASLI KE NAMA KATEGORI BERDASARKAN HASIL AKHIR PENJUALAN
+    # MAP CLUSTER ID KE KATEGORI (BERDASARKAN URUTAN NILAI CENTROID ASLI)
+    # Cluster 0 = 0.0649 -> Kurang Laris
+    # Cluster 2 = 0.2249 -> Sedang
+    # Cluster 1 = 0.5716 -> Laris
     # =========================================================================
-    # Cluster 0 = Kurang Laris
-    # Cluster 1 = Sedang
-    # Cluster 2 = Laris (Total Qty Paling Tinggi)
     corrected_label_map = {
         0: "Kurang Laris",
-        1: "Sedang",
-        2: "Laris"
+        2: "Sedang",
+        1: "Laris"
     }
 
     # Tetapkan kolom Kategori ke DataFrame utama
@@ -83,11 +83,11 @@ def show():
     with col_kanan:
         st.markdown("<div class='section-title'>🎯 Posisi Centroid</div>", unsafe_allow_html=True)
         
-        # Tampilkan centroid berurut: Kurang Laris -> Sedang -> Laris
+        # Urutan centroid yang benar: Kurang Laris (Cluster 0) -> Sedang (Cluster 2) -> Laris (Cluster 1)
         centroid_order = [
             (0, "Kurang Laris"),
-            (1, "Sedang"),
-            (2, "Laris")
+            (2, "Sedang"),
+            (1, "Laris")
         ]
         
         centroid_data = []
@@ -127,7 +127,6 @@ def show():
             "Sangat Rendah": ["Evaluasi produk dengan tingkat penjualan terendah.", "Pertimbangkan pemberian diskon/promosi.", "Kurangi pengadaan stok."]
         }
         
-        # Urutan Tampil Rekomendasi: Laris -> Sedang -> Kurang Laris
         custom_rec_order = ["Sangat Laris", "Laris", "Sedang", "Kurang Laris", "Sangat Rendah"]
         summary_rec = summary.copy()
         summary_rec['Kategori'] = pd.Categorical(summary_rec['Kategori'], categories=custom_rec_order, ordered=True)
@@ -168,11 +167,11 @@ def show():
 
     df_dist_display = pd.DataFrame({'Nama Barang': df_clustered['Nama Barang']})
     
-    # Hitung jarak Euclidean konsisten sesuai urutan: Kurang Laris, Sedang, Laris
+    # Jarak Euclidean konsisten: Kurang Laris (0), Sedang (2), Laris (1)
     target_order = [
         (0, "Kurang Laris"),
-        (1, "Sedang"),
-        (2, "Laris")
+        (2, "Sedang"),
+        (1, "Laris")
     ]
     
     for cid, label in target_order:
