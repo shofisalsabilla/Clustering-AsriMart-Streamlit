@@ -35,43 +35,42 @@ def show():
     df_full = df_clustered.merge(df_agg, on='Nama Barang', suffixes=('_norm', ''))
 
     # =========================================================================
-    # DETEKSI JUMLAH CLUSTER (K) & SETTING DINAMIS
+    # URUTKAN CLUSTER SECARA OTOMATIS BERDASARKAN BESARNYA NILAI CENTROID
     # =========================================================================
     num_clusters = len(model.cluster_centers_)
+    
+    # Ambil nilai centroid tiap cluster
+    centroids_flat = model.cluster_centers_.flatten()
+    
+    # Urutkan ID Cluster dari nilai centroid terkecil ke terbesar
+    # ID dengan centroid terkecil = Kurang Laris
+    # ID dengan centroid tengah = Sedang (jika K=3)
+    # ID dengan centroid terbesar = Laris
+    sorted_cluster_ids = np.argsort(centroids_flat)
 
     if num_clusters == 2:
-        label_map = {
-            0: "Kurang Laris",
-            1: "Laris"
-        }
-        centroid_order = [
-            (0, "Kurang Laris"),
-            (1, "Laris")
-        ]
+        labels = ["Kurang Laris", "Laris"]
+    else:
+        labels = ["Kurang Laris", "Sedang", "Laris"]
+
+    # Buat mapping otomatis ID Cluster -> Label Kategori
+    label_map = {}
+    centroid_order = []
+    custom_cluster_badge = {}
+    
+    for rank, cid in enumerate(sorted_cluster_ids):
+        lbl = labels[rank]
+        label_map[int(cid)] = lbl
+        centroid_order.append((int(cid), lbl))
+        custom_cluster_badge[lbl] = int(cid)
+
+    # List urutan tampilan
+    if num_clusters == 2:
         list_pilihan = ["Semua", "Laris", "Kurang Laris"]
         rec_order_list = ["Laris", "Kurang Laris"]
-        custom_cluster_badge = {
-            "Laris": 1,
-            "Kurang Laris": 0
-        }
-    else:  # Default K = 3
-        label_map = {
-            0: "Kurang Laris",
-            1: "Sedang",
-            2: "Laris"
-        }
-        centroid_order = [
-            (0, "Kurang Laris"),
-            (1, "Sedang"),
-            (2, "Laris")
-        ]
+    else:
         list_pilihan = ["Semua", "Laris", "Sedang", "Kurang Laris"]
         rec_order_list = ["Laris", "Sedang", "Kurang Laris"]
-        custom_cluster_badge = {
-            "Laris": 2,
-            "Sedang": 1,
-            "Kurang Laris": 0
-        }
 
     # Tetapkan kolom Kategori ke DataFrame utama
     df_full['Kategori'] = df_full['Cluster'].map(label_map).fillna("Lainnya")
@@ -109,12 +108,11 @@ def show():
         
         centroid_data = []
         for cid, label in centroid_order:
-            if cid < num_clusters:
-                val = model.cluster_centers_[cid][0]
-                centroid_data.append({
-                    "Kategori": label,
-                    "Centroid": f"[{val:.8f}]"
-                })
+            val = model.cluster_centers_[cid][0]
+            centroid_data.append({
+                "Kategori": label,
+                "Centroid": f"[{val:.8f}]"
+            })
             
         df_centroid_display = pd.DataFrame(centroid_data)
         st.table(df_centroid_display)
@@ -192,11 +190,11 @@ def show():
 
     df_dist_display = pd.DataFrame({'Nama Barang': df_clustered['Nama Barang']})
     
+    # Menghitung jarak Euclidean secara dinamis sesuai urutan centroid terurut
     for cid, label in centroid_order:
-        if cid < num_clusters:
-            centroid_val = model.cluster_centers_[cid][0]
-            dist_to_centroid = np.abs(X_vals - centroid_val)
-            df_dist_display[f"Jarak ke Centroid ({label})"] = [f"{v:.4f}" for v in dist_to_centroid]
+        centroid_val = model.cluster_centers_[cid][0]
+        dist_to_centroid = np.abs(X_vals - centroid_val)
+        df_dist_display[f"Jarak ke Centroid ({label})"] = [f"{v:.4f}" for v in dist_to_centroid]
 
     st.dataframe(df_dist_display, use_container_width=True)
 
