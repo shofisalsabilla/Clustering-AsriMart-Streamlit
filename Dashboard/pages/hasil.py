@@ -36,15 +36,15 @@ def show():
     df_full = df_clustered.merge(df_agg, on='Nama Barang', suffixes=('_norm', ''))
 
     # =========================================================================
-    # MAP CLUSTER ID KE KATEGORI (KONSISTEN BERDASARKAN NILAI CENTROID ASLI)
-    # Cluster 0 = Kurang Laris (~0.0649)
-    # Cluster 2 = Sedang        (~0.2249)
-    # Cluster 1 = Laris         (~0.5716)
+    # MAP CLUSTER ID KE KATEGORI (DISESUAIKAN BERDASARKAN TOTAL QTY TERBANYAK)
+    # Cluster 2 = Laris (Qty Terbesar)
+    # Cluster 1 = Sedang
+    # Cluster 0 = Kurang Laris
     # =========================================================================
     corrected_label_map = {
         0: "Kurang Laris",
-        2: "Sedang",
-        1: "Laris"
+        1: "Sedang",
+        2: "Laris"
     }
 
     # Tetapkan kolom Kategori ke DataFrame utama
@@ -83,14 +83,11 @@ def show():
     with col_kanan:
         st.markdown("<div class='section-title'>🎯 Posisi Centroid</div>", unsafe_allow_html=True)
         
-        # Urutan ID cluster sesuai dengan label mapping yang benar:
-        # Cluster 0 = Kurang Laris (~0.0649)
-        # Cluster 2 = Sedang        (~0.2249)
-        # Cluster 1 = Laris         (~0.5716)
+        # Urutan ID cluster sesuai dengan label mapping yang benar
         centroid_order = [
             (0, "Kurang Laris"),
-            (2, "Sedang"),
-            (1, "Laris")
+            (1, "Sedang"),
+            (2, "Laris")
         ]
         
         centroid_data = []
@@ -170,14 +167,11 @@ def show():
 
     df_dist_display = pd.DataFrame({'Nama Barang': df_clustered['Nama Barang']})
     
-    # Urutan kolom: 
-    # Kolom 1 = Kurang Laris (Cluster ID 0)
-    # Kolom 2 = Sedang (Cluster ID 2) -> Nilai 0.1862
-    # Kolom 3 = Laris (Cluster ID 1)  -> Nilai 0.1605
+    # Pemetaan Cluster ID disesuaikan
     target_order = [
         (0, "Kurang Laris"),
-        (2, "Sedang"),
-        (1, "Laris")
+        (1, "Sedang"),
+        (2, "Laris")
     ]
     
     for cid, label in target_order:
