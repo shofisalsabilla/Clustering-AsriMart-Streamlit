@@ -24,7 +24,6 @@ def show():
     df_clustered = state.get("df_clustered").copy()
     model        = state.get("kmeans_model")
     df_agg       = state.get("df_agg").copy()
-    scaler       = state.get("scaler") 
 
     # Hapus kolom 'Kategori' bawaan jika ada agar tidak bentrok
     if 'Kategori' in df_clustered.columns:
@@ -36,16 +35,46 @@ def show():
     df_full = df_clustered.merge(df_agg, on='Nama Barang', suffixes=('_norm', ''))
 
     # =========================================================================
-    # MAP CLUSTER ID KE KATEGORI
+    # DETEKSI JUMLAH CLUSTER (K) & SETTING DINAMIS
     # =========================================================================
-    corrected_label_map = {
-        0: "Kurang Laris",
-        1: "Sedang",
-        2: "Laris"
-    }
+    num_clusters = len(model.cluster_centers_)
+
+    if num_clusters == 2:
+        label_map = {
+            0: "Kurang Laris",
+            1: "Laris"
+        }
+        centroid_order = [
+            (0, "Kurang Laris"),
+            (1, "Laris")
+        ]
+        list_pilihan = ["Semua", "Laris", "Kurang Laris"]
+        rec_order_list = ["Laris", "Kurang Laris"]
+        custom_cluster_badge = {
+            "Laris": 1,
+            "Kurang Laris": 0
+        }
+    else:  # Default K = 3
+        label_map = {
+            0: "Kurang Laris",
+            1: "Sedang",
+            2: "Laris"
+        }
+        centroid_order = [
+            (0, "Kurang Laris"),
+            (1, "Sedang"),
+            (2, "Laris")
+        ]
+        list_pilihan = ["Semua", "Laris", "Sedang", "Kurang Laris"]
+        rec_order_list = ["Laris", "Sedang", "Kurang Laris"]
+        custom_cluster_badge = {
+            "Laris": 2,
+            "Sedang": 1,
+            "Kurang Laris": 0
+        }
 
     # Tetapkan kolom Kategori ke DataFrame utama
-    df_full['Kategori'] = df_full['Cluster'].map(corrected_label_map)
+    df_full['Kategori'] = df_full['Cluster'].map(label_map).fillna("Lainnya")
 
     summary = df_full.groupby('Kategori').agg(
         Jumlah_Barang=('Nama Barang', 'count'),
@@ -54,7 +83,6 @@ def show():
         Max_Qty=('Qty_2022_2025', 'max'),
     ).reset_index().sort_values('Rata_Qty')
 
-    # Warna dinamis berdasarkan kategori
     def get_color(kategori):
         if kategori in ["Sangat Laris", "Laris"]: return "#27ae60"
         if kategori == "Sedang": return "#f39c12"
@@ -79,19 +107,14 @@ def show():
     with col_kanan:
         st.markdown("<div class='section-title'>🎯 Posisi Centroid</div>", unsafe_allow_html=True)
         
-        centroid_order = [
-            (0, "Kurang Laris"),
-            (2, "Sedang"),
-            (1, "Laris")
-        ]
-        
         centroid_data = []
         for cid, label in centroid_order:
-            val = model.cluster_centers_[cid][0]
-            centroid_data.append({
-                "Kategori": label,
-                "Centroid": f"[{val:.8f}]"
-            })
+            if cid < num_clusters:
+                val = model.cluster_centers_[cid][0]
+                centroid_data.append({
+                    "Kategori": label,
+                    "Centroid": f"[{val:.8f}]"
+                })
             
         df_centroid_display = pd.DataFrame(centroid_data)
         st.table(df_centroid_display)
@@ -109,15 +132,8 @@ def show():
         df_show = df_full[['Nama Barang', 'Qty_2022_2025', 'Cluster']].copy()
         df_show.rename(columns={'Qty_2022_2025': 'Total Qty (Asli)'}, inplace=True)
         
-        tabel_kategori_map = {
-            2: "Laris",
-            1: "Sedang",
-            0: "Kurang Laris"
-        }
+        df_show['Kategori'] = df_show['Cluster'].map(label_map).fillna("Lainnya")
         
-        df_show['Kategori'] = df_show['Cluster'].map(tabel_kategori_map)
-        
-        list_pilihan = ["Semua", "Laris", "Sedang", "Kurang Laris"]
         selected_cat = st.selectbox("Filter Kategori:", list_pilihan, key="hasil_filter")
         
         if selected_cat != "Semua": 
@@ -142,14 +158,6 @@ def show():
             "Kurang Laris": ["Tingkatkan promosi produk.", "Evaluasi strategi pemasaran.", "Pantau penjualan secara berkala."],
             "Sangat Rendah": ["Evaluasi produk dengan tingkat penjualan terendah.", "Pertimbangkan pemberian diskon/promosi.", "Kurangi pengadaan stok."]
         }
-        
-        custom_cluster_badge = {
-            "Laris": 2,
-            "Sedang": 1,
-            "Kurang Laris": 0
-        }
-
-        rec_order_list = ["Laris", "Sedang", "Kurang Laris"]
 
         for kategori in rec_order_list:
             if kategori in df_full['Kategori'].values:
@@ -184,16 +192,11 @@ def show():
 
     df_dist_display = pd.DataFrame({'Nama Barang': df_clustered['Nama Barang']})
     
-    target_order = [
-        (0, "Kurang Laris"),
-        (2, "Sedang"),
-        (1, "Laris")
-    ]
-    
-    for cid, label in target_order:
-        centroid_val = model.cluster_centers_[cid][0]
-        dist_to_centroid = np.abs(X_vals - centroid_val)
-        df_dist_display[f"Jarak ke Centroid ({label})"] = [f"{v:.4f}" for v in dist_to_centroid]
+    for cid, label in centroid_order:
+        if cid < num_clusters:
+            centroid_val = model.cluster_centers_[cid][0]
+            dist_to_centroid = np.abs(X_vals - centroid_val)
+            df_dist_display[f"Jarak ke Centroid ({label})"] = [f"{v:.4f}" for v in dist_to_centroid]
 
     st.dataframe(df_dist_display, use_container_width=True)
 
