@@ -36,10 +36,10 @@ def show():
     df_full = df_clustered.merge(df_agg, on='Nama Barang', suffixes=('_norm', ''))
 
     # =========================================================================
-    # MAP CLUSTER ID KE KATEGORI (BERDASARKAN URUTAN NILAI CENTROID ASLI)
-    # Cluster 0 = 0.0649 -> Kurang Laris
-    # Cluster 2 = 0.2249 -> Sedang
-    # Cluster 1 = 0.5716 -> Laris
+    # MAP CLUSTER ID KE KATEGORI (KONSISTEN BERDASARKAN NILAI CENTROID ASLI)
+    # Cluster 0 = Kurang Laris (~0.0649)
+    # Cluster 2 = Sedang       (~0.2249)
+    # Cluster 1 = Laris        (~0.5716)
     # =========================================================================
     corrected_label_map = {
         0: "Kurang Laris",
@@ -83,7 +83,10 @@ def show():
     with col_kanan:
         st.markdown("<div class='section-title'>🎯 Posisi Centroid</div>", unsafe_allow_html=True)
         
-        # Urutan centroid yang benar: Kurang Laris (Cluster 0) -> Sedang (Cluster 2) -> Laris (Cluster 1)
+        # Urutan ID cluster sesuai dengan label mapping yang benar:
+        # Cluster 0 = Kurang Laris (~0.0649)
+        # Cluster 2 = Sedang       (~0.2249)
+        # Cluster 1 = Laris        (~0.5716)
         centroid_order = [
             (0, "Kurang Laris"),
             (2, "Sedang"),
@@ -167,7 +170,7 @@ def show():
 
     df_dist_display = pd.DataFrame({'Nama Barang': df_clustered['Nama Barang']})
     
-    # Jarak Euclidean konsisten: Kurang Laris (0), Sedang (2), Laris (1)
+    # Hitung jarak Euclidean sesuai urutan yang tepat: Kurang Laris (0), Sedang (2), Laris (1)
     target_order = [
         (0, "Kurang Laris"),
         (2, "Sedang"),
