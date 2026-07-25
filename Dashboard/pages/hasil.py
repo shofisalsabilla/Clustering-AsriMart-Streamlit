@@ -36,15 +36,15 @@ def show():
     df_full = df_clustered.merge(df_agg, on='Nama Barang', suffixes=('_norm', ''))
 
     # =========================================================================
-    # MAP CLUSTER ID ASLI KE NAMA KATEGORI BERDASARKAN HASIL K-MEANS
+    # MAP CLUSTER ID ASLI KE NAMA KATEGORI BERDASARKAN HASIL AKHIR PENJUALAN
     # =========================================================================
-    # Cluster 0 = Kurang Laris (Centroid ~0.064)
-    # Cluster 2 = Sedang       (Centroid ~0.224)
-    # Cluster 1 = Laris        (Centroid ~0.571)
+    # Cluster 0 = Kurang Laris
+    # Cluster 1 = Sedang
+    # Cluster 2 = Laris (Total Qty Paling Tinggi)
     corrected_label_map = {
         0: "Kurang Laris",
-        2: "Sedang",
-        1: "Laris"
+        1: "Sedang",
+        2: "Laris"
     }
 
     # Tetapkan kolom Kategori ke DataFrame utama
@@ -86,8 +86,8 @@ def show():
         # Tampilkan centroid berurut: Kurang Laris -> Sedang -> Laris
         centroid_order = [
             (0, "Kurang Laris"),
-            (2, "Sedang"),
-            (1, "Laris")
+            (1, "Sedang"),
+            (2, "Laris")
         ]
         
         centroid_data = []
@@ -171,8 +171,8 @@ def show():
     # Hitung jarak Euclidean konsisten sesuai urutan: Kurang Laris, Sedang, Laris
     target_order = [
         (0, "Kurang Laris"),
-        (2, "Sedang"),
-        (1, "Laris")
+        (1, "Sedang"),
+        (2, "Laris")
     ]
     
     for cid, label in target_order:
