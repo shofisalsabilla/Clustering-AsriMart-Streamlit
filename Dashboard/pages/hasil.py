@@ -1,123 +1,4 @@
-import streamlit as st
-import pandas as pd
-import numpy as np
-from datetime import datetime
-from utils import state
-
-def show():
-    state.init_state()
-
-    st.markdown("""
-    <div class='main-header'>
-        <h2 style='margin:0; color:white;'>📊 Hasil Clustering</h2>
-        <p style='margin:4px 0 0; color:#b0c4de; font-size:0.9rem;'>
-            Tabel pengelompokan barang, centroid, jarak Euclidean, dan laporan lengkap
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
-
-    if not state.get("cluster_done"):
-        st.warning("⚠️ Harap selesaikan **Konfigurasi Clustering** dan jalankan K-Means terlebih dahulu.")
-        return
-
-    # Mengambil data dari state
-    df_clustered = state.get("df_clustered").copy()
-    model        = state.get("kmeans_model")
-    df_agg       = state.get("df_agg").copy()
-    scaler       = state.get("scaler") 
-
-    # Hapus kolom 'Kategori' bawaan jika ada agar tidak bentrok
-    if 'Kategori' in df_clustered.columns:
-        df_clustered.drop(columns=['Kategori'], inplace=True)
-    if 'Kategori' in df_agg.columns:
-        df_agg.drop(columns=['Kategori'], inplace=True)
-
-    # Penggabungan data awal
-    df_full = df_clustered.merge(df_agg, on='Nama Barang', suffixes=('_norm', ''))
-
-    # =========================================================================
-    # MAP CLUSTER ID KE KATEGORI (PAS SESUAI NILAI CENTROID DARI MODEL)
-    # Cluster 0 = 0.0649... -> Kurang Laris
-    # Cluster 2 = 0.2249... -> Sedang
-    # Cluster 1 = 0.5716... -> Laris
-    # =========================================================================
-    corrected_label_map = {
-        0: "Kurang Laris",
-        2: "Sedang",
-        1: "Laris"
-    }
-
-    # Tetapkan kolom Kategori ke DataFrame utama
-    df_full['Kategori'] = df_full['Cluster'].map(corrected_label_map)
-    # =========================================================================
-
-    summary = df_full.groupby('Kategori').agg(
-        Jumlah_Barang=('Nama Barang', 'count'),
-        Rata_Qty=('Qty_2022_2025', 'mean'),
-        Min_Qty=('Qty_2022_2025', 'min'),
-        Max_Qty=('Qty_2022_2025', 'max'),
-    ).reset_index().sort_values('Rata_Qty')
-
-    # Warna dinamis berdasarkan kategori
-    def get_color(kategori):
-        if kategori in ["Sangat Laris", "Laris"]: return "#27ae60"
-        if kategori == "Sedang": return "#f39c12"
-        return "#e74c3c"
-
-    # 1 & 2. Ringkasan Cluster & Centroid
-    col_kiri, col_kanan = st.columns([2, 1])
-    
-    with col_kiri:
-        st.markdown("<div class='section-title'>📌 Ringkasan Cluster</div>", unsafe_allow_html=True)
-        cols_grid = st.columns(len(summary))
-        for col, (_, row) in zip(cols_grid, summary.iterrows()):
-            c = get_color(row['Kategori'])
-            col.markdown(f"""
-            <div style='background:rgba(255,255,255,0.04); border:1px solid {c};
-                        border-radius:12px; padding:16px; text-align:center;'>
-                <div style='font-size:2rem; font-weight:800; color:{c};'>{row['Jumlah_Barang']}</div>
-                <div style='font-weight:700; color:{c}; font-size:0.9rem;'>{row['Kategori']}</div>
-            </div>
-            """, unsafe_allow_html=True)
-
-    with col_kanan:
-        st.markdown("<div class='section-title'>🎯 Posisi Centroid</div>", unsafe_allow_html=True)
-        
-        # Urutan dipasangkan langsung antara Cluster ID dan Label yang benar
-        centroid_order = [
-            (0, "Kurang Laris"),
-            (2, "Sedang"),
-            (1, "Laris")
-        ]
-        
-        centroid_data = []
-        for cid, label in centroid_order:
-            val = model.cluster_centers_[cid][0]
-            centroid_data.append({
-                "Kategori": label,
-                "Centroid": f"[{val:.8f}]"
-            })
-            
-        df_centroid_display = pd.DataFrame(centroid_data)
-        st.table(df_centroid_display)
-
-    # 3 & 4. Tabel Hasil & Rekomendasi
-    st.markdown("---")
-    col_tabel, col_rek = st.columns([2, 1])
-
-    with col_tabel:
-        st.markdown("<div class='section-title'>📋 Tabel Hasil Pengelompokan</div>", unsafe_allow_html=True)
-        all_cats = ["Semua"] + list(df_full['Kategori'].unique())
-        selected_cat = st.selectbox("Filter Kategori:", all_cats, key="hasil_filter")
-        df_show = df_full[['Nama Barang', 'Qty_2022_2025', 'Cluster', 'Kategori']].copy()
-        df_show.rename(columns={'Qty_2022_2025': 'Total Qty (Asli)'}, inplace=True)
-        if selected_cat != "Semua": 
-            df_show = df_show[df_show['Kategori'] == selected_cat]
-        
-        st.dataframe(df_show.sort_values('Total Qty (Asli)', ascending=False).reset_index(drop=True), use_container_width=True, height=400)
-        st.caption(f"Menampilkan {len(df_show):,} barang")
-
-    with col_rek:
+with col_rek:
         st.markdown("<div class='section-title'>📝 Rekomendasi/Strategi</div>", unsafe_allow_html=True)
         REKOMENDASI = {
             "Sangat Laris": ["Tingkatkan ketersediaan stok untuk menghindari kehabisan.", "Jadikan produk sebagai produk unggulan.", "Pertahankan strategi pemasaran yang efektif."],
@@ -127,16 +8,23 @@ def show():
             "Sangat Rendah": ["Evaluasi produk dengan tingkat penjualan terendah.", "Pertimbangkan pemberian diskon/promosi.", "Kurangi pengadaan stok."]
         }
         
+        # Urutan urut dari Laris -> Sedang -> Kurang Laris
         custom_rec_order = ["Sangat Laris", "Laris", "Sedang", "Kurang Laris", "Sangat Rendah"]
         summary_rec = summary.copy()
         summary_rec['Kategori'] = pd.Categorical(summary_rec['Kategori'], categories=custom_rec_order, ordered=True)
         summary_rec = summary_rec.sort_values('Kategori').reset_index(drop=True)
 
-        inv_label_map = {v: k for k, v in corrected_label_map.items()}
+        # Mapping ID Cluster khusus untuk tampilan kartu rekomendasi
+        rec_cluster_map = {
+            "Laris": 1,
+            "Sedang": 2,
+            "Kurang Laris": 0
+        }
+
         for _, row in summary_rec.iterrows():
             kategori = row['Kategori']
             c = get_color(kategori)
-            cluster_id = inv_label_map.get(kategori, "?")
+            cluster_id = rec_cluster_map.get(kategori, "?")
             poin = REKOMENDASI.get(kategori, ["Pantau perkembangan berkala."])
             list_html = "".join([f"<li style='margin-bottom:4px; color:#000000;'>{p}</li>" for p in poin])
             
@@ -153,36 +41,3 @@ def show():
                 </div>
             </div>
             """, unsafe_allow_html=True)
-
-    # =========================================================================
-    # 5. JARAK EUCLIDEAN KE CENTROID
-    # =========================================================================
-    st.markdown("---")
-    st.markdown("<div class='section-title'>📐 Jarak Euclidean ke Centroid</div>", unsafe_allow_html=True)
-    
-    # Ambil kolom angka ter-normalisasi
-    num_cols = df_clustered.select_dtypes(include=[np.number]).columns.tolist()
-    num_cols = [c for c in num_cols if c not in ['Cluster', 'Kategori']]
-    X_vals = df_clustered[[num_cols[0]]].values.flatten()
-
-    df_dist_display = pd.DataFrame({'Nama Barang': df_clustered['Nama Barang']})
-    
-    target_order = [
-        (0, "Kurang Laris"),
-        (2, "Sedang"),
-        (1, "Laris")
-    ]
-    
-    for cid, label in target_order:
-        centroid_val = model.cluster_centers_[cid][0]
-        dist_to_centroid = np.abs(X_vals - centroid_val)
-        # Format desimal terkunci di 4 angka di belakang koma
-        df_dist_display[f"Jarak ke Centroid ({label})"] = [f"{v:.4f}" for v in dist_to_centroid]
-
-    st.dataframe(df_dist_display, use_container_width=True)
-
-    st.markdown("---")
-    csv = df_full[['Nama Barang', 'Qty_2022_2025', 'Kategori']].to_csv(index=False).encode('utf-8')
-    st.download_button("⬇️ Download Hasil Clustering (.csv)", data=csv, 
-                       file_name=f"hasil_asri_mart_{datetime.now().strftime('%Y%m%d')}.csv", 
-                       use_container_width=True, type="primary")
