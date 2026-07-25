@@ -27,7 +27,7 @@ def show():
     df_agg       = state.get("df_agg").copy()
     scaler       = state.get("scaler") 
 
-    # Hapus kolom 'Kategori' bawaan lama jika ada agar tidak bentrok (duplikat _x / _y)
+    # Hapus kolom 'Kategori' bawaan jika ada agar tidak bentrok
     if 'Kategori' in df_clustered.columns:
         df_clustered.drop(columns=['Kategori'], inplace=True)
     if 'Kategori' in df_agg.columns:
@@ -37,27 +37,27 @@ def show():
     df_full = df_clustered.merge(df_agg, on='Nama Barang', suffixes=('_norm', ''))
 
     # =========================================================================
-    # LOGIKA PEMETAAN LABEL DINAMIS & OTOMATIS BERDASARKAN NILAI CENTROID
+    # LOGIKA PEMETAAN LABEL BERDASARKAN RATA-RATA TOTAL QTY ASLI KELOMPOK
     # =========================================================================
-    centroids = model.cluster_centers_.flatten()
-    sorted_cluster_ids = np.argsort(centroids)  # Urutkan index dari centroid terkecil ke terbesar
+    # Hitung rata-rata penjualan asli untuk setiap Cluster ID
+    cluster_means = df_full.groupby('Cluster')['Qty_2022_2025'].mean().sort_values()
+    sorted_cluster_ids = cluster_means.index.tolist()  # Index cluster dari Rata-rata Qty Terendah ke Tertinggi
 
-    # Menyesuaikan label berdasarkan urutan nilai centroid (K=3)
-    if len(centroids) == 3:
+    # Peta penamaan berdasarkan urutan penjualan asli
+    if len(sorted_cluster_ids) == 3:
         corrected_label_map = {
-            sorted_cluster_ids[0]: "Kurang Laris", # Centroid Terendah
-            sorted_cluster_ids[1]: "Sedang",       # Centroid Menengah
-            sorted_cluster_ids[2]: "Laris"         # Centroid Tertinggi
+            sorted_cluster_ids[0]: "Kurang Laris", # Qty Terendah
+            sorted_cluster_ids[1]: "Sedang",       # Qty Menengah
+            sorted_cluster_ids[2]: "Laris"         # Qty Tertinggi
         }
     else:
-        # Cadangan jika nilai K selain 3
         custom_labels = ["Sangat Rendah", "Kurang Laris", "Sedang", "Laris", "Sangat Laris"]
         corrected_label_map = {
             cid: custom_labels[i] if i < len(custom_labels) else f"Cluster {cid}"
             for i, cid in enumerate(sorted_cluster_ids)
         }
 
-    # Tetapkan kolom Kategori yang baru dan valid
+    # Tetapkan kolom Kategori yang valid ke DataFrame utama
     df_full['Kategori'] = df_full['Cluster'].map(corrected_label_map)
     # =========================================================================
 
@@ -106,7 +106,7 @@ def show():
                     "Centroid": f"[{centroid_val:.8f}]"
                 })
         
-        # Membuat DataFrame dan mengurutkan secara eksplisit agar "Sedang" ada di tengah
+        # Urutkan tampilan tabel Centroid: Kurang Laris -> Sedang -> Laris
         df_centroid_display = pd.DataFrame(centroid_data)
         custom_order = ["Kurang Laris", "Sedang", "Laris"]
         df_centroid_display['Kategori'] = pd.Categorical(df_centroid_display['Kategori'], categories=custom_order, ordered=True)
@@ -140,7 +140,7 @@ def show():
             "Sangat Rendah": ["Evaluasi produk dengan tingkat penjualan terendah.", "Pertimbangkan pemberian diskon/promosi.", "Kurangi pengadaan stok."]
         }
         
-        # Mengurutkan urutan tampil kartu rekomendasi: Laris -> Sedang -> Kurang Laris
+        # Urutan Tampil Rekomendasi: Laris -> Sedang -> Kurang Laris
         custom_rec_order = ["Sangat Laris", "Laris", "Sedang", "Kurang Laris", "Sangat Rendah"]
         summary_rec = summary.copy()
         summary_rec['Kategori'] = pd.Categorical(summary_rec['Kategori'], categories=custom_rec_order, ordered=True)
