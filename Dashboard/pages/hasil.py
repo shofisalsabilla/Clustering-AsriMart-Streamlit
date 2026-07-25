@@ -24,35 +24,35 @@ def show():
     df_clustered = state.get("df_clustered").copy()
     model        = state.get("kmeans_model")
     df_agg       = state.get("df_agg").copy()
-    scaler       = state.get("scaler") 
 
-    # Hapus kolom 'Kategori' bawaan jika ada agar tidak bentrok
-    if 'Kategori' in df_clustered.columns:
-        df_clustered.drop(columns=['Kategori'], inplace=True)
-    if 'Kategori' in df_agg.columns:
-        df_agg.drop(columns=['Kategori'], inplace=True)
+    # Bersihkan kolom Kategori bawaan jika ada
+    for df in [df_clustered, df_agg]:
+        if 'Kategori' in df.columns:
+            df.drop(columns=['Kategori'], inplace=True)
 
-    # Penggabungan data awal
+    # Combine data awal
     df_full = df_clustered.merge(df_agg, on='Nama Barang', suffixes=('_norm', ''))
 
     # =========================================================================
-    # OTOMATISASI MAPPING CLUSTER BERDASARKAN CENTROID (LANGSUNG DI AWAL)
+    # DETEKSI DAN MAPPING OTOMATIS BERDASARKAN HASIL NILAI CENTROID ASLI MODEL
     # =========================================================================
-    # Ambil nilai centroid dari model
+    # Ambil nilai centroid tiap cluster dari model K-Means yang tersimpan
     centroids = model.cluster_centers_.flatten()
     
-    # Urutkan index cluster dari nilai centroid terkecil ke terbesar
+    # Dapatkan ID cluster diurutkan berdasarkan nilai centroid (rendah ke tinggi)
     sorted_cluster_ids = np.argsort(centroids)
     
-    # Mapping otomatis berdasarkan urutan centroid:
-    # Terkecil -> Kurang Laris, Tengah -> Sedang, Terbesar -> Laris
+    # Map ID cluster asli ke Label Kategori yang sesuai nilainya
+    # Id dengan centroid terkecil = Kurang Laris
+    # Id dengan centroid sedang = Sedang
+    # Id dengan centroid terbesar = Laris
     auto_label_map = {
-        sorted_cluster_ids[0]: "Kurang Laris",
-        sorted_cluster_ids[1]: "Sedang",
-        sorted_cluster_ids[2]: "Laris"
+        int(sorted_cluster_ids[0]): "Kurang Laris",
+        int(sorted_cluster_ids[1]): "Sedang",
+        int(sorted_cluster_ids[2]): "Laris"
     }
 
-    # Terapkan Kategori ke DataFrame utama DARI AWAL
+    # Override total kolom Kategori
     df_full['Kategori'] = df_full['Cluster'].map(auto_label_map)
     # =========================================================================
 
@@ -63,7 +63,6 @@ def show():
         Max_Qty=('Qty_2022_2025', 'max'),
     ).reset_index().sort_values('Rata_Qty')
 
-    # Warna dinamis berdasarkan kategori
     def get_color(kategori):
         if kategori in ["Sangat Laris", "Laris"]: return "#27ae60"
         if kategori == "Sedang": return "#f39c12"
@@ -113,8 +112,10 @@ def show():
         st.markdown("<div class='section-title'>📋 Tabel Hasil Pengelompokan</div>", unsafe_allow_html=True)
         all_cats = ["Semua"] + list(df_full['Kategori'].unique())
         selected_cat = st.selectbox("Filter Kategori:", all_cats, key="hasil_filter")
+        
         df_show = df_full[['Nama Barang', 'Qty_2022_2025', 'Cluster', 'Kategori']].copy()
         df_show.rename(columns={'Qty_2022_2025': 'Total Qty (Asli)'}, inplace=True)
+        
         if selected_cat != "Semua": 
             df_show = df_show[df_show['Kategori'] == selected_cat]
         
@@ -124,14 +125,13 @@ def show():
     with col_rek:
         st.markdown("<div class='section-title'>📝 Rekomendasi/Strategi</div>", unsafe_allow_html=True)
         REKOMENDASI = {
-            "Sangat Laris": ["Tingkatkan ketersediaan stok untuk menghindari kehabisan.", "Jadikan produk sebagai produk unggulan.", "Pertahankan strategi pemasaran yang efektif."],
             "Laris": ["Prioritaskan ketersediaan stok.", "Jadikan produk fokus pemasaran.", "Pertahankan kualitas produk dan layanan."],
             "Sedang": ["Pertahankan performa penjualan yang stabil.", "Lakukan promosi secara berkala.", "Pantau perkembangan permintaan pasar."],
-            "Kurang Laris": ["Tingkatkan promosi produk.", "Evaluasi strategi pemasaran.", "Pantau penjualan secara berkala."],
-            "Sangat Rendah": ["Evaluasi produk dengan tingkat penjualan terendah.", "Pertimbangkan pemberian diskon/promosi.", "Kurangi pengadaan stok."]
+            "Kurang Laris": ["Tingkatkan promosi produk.", "Evaluasi strategi pemasaran.", "Pantau penjualan secara berkala."]
         }
         
         rec_order_list = ["Laris", "Sedang", "Kurang Laris"]
+        # Invert mapping: Kategori -> Cluster ID
         inv_label_map = {v: k for k, v in auto_label_map.items()}
 
         for kategori in rec_order_list:
