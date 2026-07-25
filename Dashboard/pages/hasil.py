@@ -21,11 +21,17 @@ def show():
         return
 
     # Mengambil data dari state
-    df_clustered = state.get("df_clustered")
+    df_clustered = state.get("df_clustered").copy()
     df_distances = state.get("df_distances")
     model        = state.get("kmeans_model")
-    df_agg       = state.get("df_agg")
+    df_agg       = state.get("df_agg").copy()
     scaler       = state.get("scaler") 
+
+    # Hapus kolom 'Kategori' bawaan lama jika ada agar tidak bentrok (duplikat _x / _y)
+    if 'Kategori' in df_clustered.columns:
+        df_clustered.drop(columns=['Kategori'], inplace=True)
+    if 'Kategori' in df_agg.columns:
+        df_agg.drop(columns=['Kategori'], inplace=True)
 
     # Penggabungan data awal
     df_full = df_clustered.merge(df_agg, on='Nama Barang', suffixes=('_norm', ''))
@@ -51,7 +57,7 @@ def show():
             for i, cid in enumerate(sorted_cluster_ids)
         }
 
-    # Perbarui kolom Kategori di df_full sesuai pemetaan yang benar
+    # Tetapkan kolom Kategori yang baru dan valid
     df_full['Kategori'] = df_full['Cluster'].map(corrected_label_map)
     # =========================================================================
 
@@ -134,8 +140,14 @@ def show():
             "Sangat Rendah": ["Evaluasi produk dengan tingkat penjualan terendah.", "Pertimbangkan pemberian diskon/promosi.", "Kurangi pengadaan stok."]
         }
         
+        # Mengurutkan urutan tampil kartu rekomendasi: Laris -> Sedang -> Kurang Laris
+        custom_rec_order = ["Sangat Laris", "Laris", "Sedang", "Kurang Laris", "Sangat Rendah"]
+        summary_rec = summary.copy()
+        summary_rec['Kategori'] = pd.Categorical(summary_rec['Kategori'], categories=custom_rec_order, ordered=True)
+        summary_rec = summary_rec.sort_values('Kategori').reset_index(drop=True)
+
         inv_label_map = {v: k for k, v in corrected_label_map.items()}
-        for _, row in summary.sort_values('Rata_Qty', ascending=False).iterrows():
+        for _, row in summary_rec.iterrows():
             kategori = row['Kategori']
             c = get_color(kategori)
             cluster_id = inv_label_map.get(kategori, "?")
