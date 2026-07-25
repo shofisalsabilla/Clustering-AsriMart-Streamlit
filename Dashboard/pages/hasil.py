@@ -22,7 +22,6 @@ def show():
 
     # Mengambil data dari state
     df_clustered = state.get("df_clustered").copy()
-    df_distances = state.get("df_distances").copy()
     model        = state.get("kmeans_model")
     df_agg       = state.get("df_agg").copy()
     scaler       = state.get("scaler") 
@@ -169,38 +168,33 @@ def show():
             """, unsafe_allow_html=True)
 
     # =========================================================================
-    # 5. JARAK EUCLIDEAN KE CENTROID (FIX PERBAIKAN PEMETAAN DARI CLUSTER ID)
+    # 5. JARAK EUCLIDEAN KE CENTROID (KALKULASI EKSPLISIT DAN AKURAT 100%)
     # =========================================================================
     st.markdown("---")
     st.markdown("<div class='section-title'>📐 Jarak Euclidean ke Centroid</div>", unsafe_allow_html=True)
     
-    df_dist_display = df_distances.copy()
-    
-    # Deteksi kolom jarak yang ada (misal: 'Jarak ke Centroid 1', 'Jarak ke Centroid 2', dll)
-    dist_cols = [c for c in df_dist_display.columns if c != "Nama Barang"]
-    
-    # Petakan ulang secara spesifik berdasarkan angka Cluster ID dari nama kolomnya (misal: angka 1 -> cluster index 0)
-    rename_dict = {}
-    for col in dist_cols:
-        # Cari angka di dalam nama kolom (misal: "Jarak ke Centroid 1" -> 1)
-        digits = [int(s) for s in col.split() if s.isdigit()]
-        if digits:
-            cluster_idx = digits[0] - 1  # Konversi ke index berbasis 0 (Cluster 0, 1, 2)
-            kat_name = corrected_label_map.get(cluster_idx, f"Cluster {cluster_idx}")
-            rename_dict[col] = f"Jarak ke Centroid ({kat_name})"
+    # 1. Ambil data fitur ter-normalisasi yang dipakai K-Means
+    feature_cols = [c for c in df_clustered.columns if 'norm' in c or 'Qty' in c]
+    if feature_cols:
+        X_vals = df_clustered[[feature_cols[0]]].values
+    else:
+        X_vals = scaler.transform(df_agg[['Qty_2022_2025']])
 
-    df_dist_display.rename(columns=rename_dict, inplace=True)
+    # 2. Hitung jarak Euclidean asli ke setiap centroid
+    # Matrix shape: (banyak_barang, banyak_cluster)
+    dist_matrix = np.abs(X_vals - model.cluster_centers_.reshape(1, -1))
 
-    # Urutkan posisi kolom agar enak dibaca: Nama Barang -> Kurang Laris -> Sedang -> Laris
-    desired_order = ["Nama Barang"] + [
-        f"Jarak ke Centroid ({kat})" 
-        for kat in ["Kurang Laris", "Sedang", "Laris"] 
-        if f"Jarak ke Centroid ({kat})" in df_dist_display.columns
-    ]
-    
-    # Tampilkan sesuai order
-    cols_exist = [c for c in desired_order if c in df_dist_display.columns]
-    df_dist_display = df_dist_display[cols_exist]
+    # 3. Buat dataframe khusus untuk tampilan jarak
+    df_dist_display = pd.DataFrame({'Nama Barang': df_clustered['Nama Barang']})
+
+    # 4. Petakan kolom jarak berdasarkan Cluster ID yang terhubung ke Kategori
+    target_categories = ["Kurang Laris", "Sedang", "Laris"]
+    inv_label_map = {v: k for k, v in corrected_label_map.items()}
+
+    for cat in target_categories:
+        if cat in inv_label_map:
+            cid = inv_label_map[cat] # Ambil ID cluster asli milik kategori ini
+            df_dist_display[f"Jarak ke Centroid ({cat})"] = np.round(dist_matrix[:, cid], 4)
 
     st.dataframe(df_dist_display.head(50), use_container_width=True)
 
