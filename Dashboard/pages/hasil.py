@@ -170,12 +170,14 @@ def show():
 
     df_dist_display = pd.DataFrame({'Nama Barang': df_clustered['Nama Barang']})
     
-    # Pemetaan Cluster ID disesuaikan agar nilai pas pada headernya:
-    # Cluster 0 = Kurang Laris, Cluster 2 = Laris, Cluster 1 = Sedang
+    # Urutan kolom: 
+    # Kolom 1 = Kurang Laris (Cluster ID 0)
+    # Kolom 2 = Sedang (Cluster ID 2) -> Nilai 0.1862
+    # Kolom 3 = Laris (Cluster ID 1)  -> Nilai 0.1605
     target_order = [
         (0, "Kurang Laris"),
-        (2, "Laris"),
-        (1, "Sedang")
+        (2, "Sedang"),
+        (1, "Laris")
     ]
     
     for cid, label in target_order:
