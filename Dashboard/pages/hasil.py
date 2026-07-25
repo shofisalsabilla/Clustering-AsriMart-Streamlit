@@ -36,19 +36,16 @@ def show():
     df_full = df_clustered.merge(df_agg, on='Nama Barang', suffixes=('_norm', ''))
 
     # =========================================================================
-    # URUTKAN CLUSTER BERDASARKAN NILAI CENTROID DENGAN LABEL YANG SESUAI
+    # MAP CLUSTER ID ASLI KE NAMA KATEGORI BERDASARKAN HASIL K-MEANS
     # =========================================================================
-    centroids = model.cluster_centers_.flatten()
-    sorted_indices = np.argsort(centroids) 
-
-    # Penyesuaian pemetaan: Urutan index centroid [Cluster 0, Cluster 2, Cluster 1]
-    # dipetakan ke ["Kurang Laris", "Laris", "Sedang"]
-    labels_by_value = ["Kurang Laris", "Laris", "Sedang"]
-    
-    # Map Cluster ID asli ke Nama Kategori
-    corrected_label_map = {}
-    for rank, cluster_idx in enumerate(sorted_indices):
-        corrected_label_map[cluster_idx] = labels_by_value[rank]
+    # Cluster 0 = Kurang Laris (Centroid ~0.064)
+    # Cluster 2 = Sedang       (Centroid ~0.224)
+    # Cluster 1 = Laris        (Centroid ~0.571)
+    corrected_label_map = {
+        0: "Kurang Laris",
+        2: "Sedang",
+        1: "Laris"
+    }
 
     # Tetapkan kolom Kategori ke DataFrame utama
     df_full['Kategori'] = df_full['Cluster'].map(corrected_label_map)
@@ -86,11 +83,16 @@ def show():
     with col_kanan:
         st.markdown("<div class='section-title'>🎯 Posisi Centroid</div>", unsafe_allow_html=True)
         
-        # Tampilkan centroid berdasar urutan nilai terkecil ke terbesar
+        # Tampilkan centroid berurut: Kurang Laris -> Sedang -> Laris
+        centroid_order = [
+            (0, "Kurang Laris"),
+            (2, "Sedang"),
+            (1, "Laris")
+        ]
+        
         centroid_data = []
-        for rank, cluster_idx in enumerate(sorted_indices):
-            label = labels_by_value[rank]
-            val = centroids[cluster_idx]
+        for cid, label in centroid_order:
+            val = model.cluster_centers_[cid][0]
             centroid_data.append({
                 "Kategori": label,
                 "Centroid": f"[{val:.8f}]"
@@ -159,18 +161,23 @@ def show():
     st.markdown("---")
     st.markdown("<div class='section-title'>📐 Jarak Euclidean ke Centroid</div>", unsafe_allow_html=True)
     
-    # 1. Ambil kolom angka ter-normalisasi
+    # Ambil kolom angka ter-normalisasi
     num_cols = df_clustered.select_dtypes(include=[np.number]).columns.tolist()
     num_cols = [c for c in num_cols if c not in ['Cluster', 'Kategori']]
-    X_vals = df_clustered[[num_cols[0]]].values
+    X_vals = df_clustered[[num_cols[0]]].values.flatten()
 
-    # 2. Buat DataFrame tampilan jarak
     df_dist_display = pd.DataFrame({'Nama Barang': df_clustered['Nama Barang']})
     
-    # 3. Hitung dan masukkan kolom jarak sesuai label
-    for rank, cluster_idx in enumerate(sorted_indices):
-        label = labels_by_value[rank]
-        dist_to_centroid = np.abs(X_vals.flatten() - centroids[cluster_idx])
+    # Hitung jarak Euclidean konsisten sesuai urutan: Kurang Laris, Sedang, Laris
+    target_order = [
+        (0, "Kurang Laris"),
+        (2, "Sedang"),
+        (1, "Laris")
+    ]
+    
+    for cid, label in target_order:
+        centroid_val = model.cluster_centers_[cid][0]
+        dist_to_centroid = np.abs(X_vals - centroid_val)
         df_dist_display[f"Jarak ke Centroid ({label})"] = np.round(dist_to_centroid, 4)
 
     st.dataframe(df_dist_display.head(50), use_container_width=True)
