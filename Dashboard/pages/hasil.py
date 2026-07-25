@@ -35,17 +35,17 @@ def show():
     df_full = df_clustered.merge(df_agg, on='Nama Barang', suffixes=('_norm', ''))
 
     # =========================================================================
-    # URUTKAN CLUSTER BERDASARKAN RATA-RATA QTY ASLI (DIJAMIN KONSISTEN)
+    # DETEKSI DAN URUTKAN BERDASARKAN NILAI CENTROID SEBENARNYA (100% AKURAT)
     # =========================================================================
     num_clusters = len(model.cluster_centers_)
     
-    # Hitung rata-rata Qty asli per cluster ID acak dari model
-    cluster_means = df_full.groupby('Cluster')['Qty_2022_2025'].mean().reset_index()
+    # Hitung nilai representative/rata-rata dari centroid tiap cluster (mendukung 1D/multidimensi)
+    centroid_means = model.cluster_centers_.mean(axis=1)
     
-    # Urutkan Cluster ID dari rata-rata Qty TERKECIL -> TERBESAR
-    sorted_clusters = cluster_means.sort_values('Qty_2022_2025', ascending=True)['Cluster'].tolist()
+    # Urutkan ID Cluster dari nilai Centroid TERKECIL -> TERBESAR
+    sorted_cluster_ids = np.argsort(centroid_means)
 
-    # Penentuan skema label dari urutan TERKECIL -> TERBESAR
+    # Penentuan skema label dinamis dari TERKECIL -> TERBESAR
     if num_clusters == 2:
         labels = ["Kurang Laris", "Laris"]
     elif num_clusters == 3:
@@ -57,12 +57,12 @@ def show():
     else:
         labels = [f"Rank {i+1}" for i in range(num_clusters)]
 
-    # Pemetaan dinamis: Cluster ID -> Label Kategori
+    # Mapping konsisten: Cluster ID K-Means -> Label Kategori & Centroid
     label_map = {}
     centroid_order = []
     custom_cluster_badge = {}
     
-    for rank, cid in enumerate(sorted_clusters):
+    for rank, cid in enumerate(sorted_cluster_ids):
         lbl = labels[rank] if rank < len(labels) else f"Rank {rank+1}"
         label_map[int(cid)] = lbl
         centroid_order.append((int(cid), lbl))
@@ -71,8 +71,8 @@ def show():
     # Tetapkan kolom Kategori ke DataFrame utama
     df_full['Kategori'] = df_full['Cluster'].map(label_map).fillna("Lainnya")
 
-    # Urutan filter & rekomendasi: SELALU dari TERBESAR -> TERKECIL (Laris -> Kurang Laris)
-    active_labels_desc = [label_map[cid] for cid in reversed(sorted_clusters)]
+    # Urutan filter & rekomendasi dari TERBESAR -> TERKECIL (Laris ke Rendah)
+    active_labels_desc = [label_map[int(cid)] for cid in reversed(sorted_cluster_ids)]
     list_pilihan = ["Semua"] + active_labels_desc
     rec_order_list = active_labels_desc
 
@@ -110,7 +110,7 @@ def show():
         centroid_data = []
         for cid, label in centroid_order:
             val = model.cluster_centers_[cid]
-            val_str = ", ".join([f"{v:.4f}" for v in val])
+            val_str = ", ".join([f"{v:.8f}" for v in val])
             centroid_data.append({
                 "Kategori": label,
                 "Centroid": f"[{val_str}]"
@@ -192,7 +192,7 @@ def show():
 
     df_dist_display = pd.DataFrame({'Nama Barang': df_clustered['Nama Barang']})
     
-    # Hitung Jarak Euclidean sesuai urutan label dari terendah ke tertinggi
+    # Hitung Jarak Euclidean presisi ke masing-masing centroid terurut
     for cid, label in centroid_order:
         centroid_val = model.cluster_centers_[cid]
         dists = np.linalg.norm(X_vals - centroid_val, axis=1)
