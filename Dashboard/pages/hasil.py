@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
 from datetime import datetime
 from utils import state
 
@@ -24,11 +25,36 @@ def show():
     df_distances = state.get("df_distances")
     model        = state.get("kmeans_model")
     df_agg       = state.get("df_agg")
-    label_map    = state.get("cluster_labels")
     scaler       = state.get("scaler") 
 
-    # Penggabungan data untuk analisis
+    # Penggabungan data awal
     df_full = df_clustered.merge(df_agg, on='Nama Barang', suffixes=('_norm', ''))
+
+    # =========================================================================
+    # PERBAIKAN LOGIKA: Mapping Label Otomatis Berdasarkan Nilai Centroid
+    # =========================================================================
+    centroids = model.cluster_centers_.flatten()
+    sorted_cluster_ids = np.argsort(centroids) # Urutkan dari centroid terkecil ke terbesar
+
+    # Menyesuaikan label sesuai jumlah cluster (K=3)
+    if len(centroids) == 3:
+        corrected_label_map = {
+            sorted_cluster_ids[0]: "Kurang Laris", # Centroid Terendah
+            sorted_cluster_ids[1]: "Sedang",       # Centroid Menengah
+            sorted_cluster_ids[2]: "Laris"         # Centroid Tertinggi
+        }
+    else:
+        # Cadangan jika K != 3
+        custom_labels = ["Sangat Rendah", "Kurang Laris", "Sedang", "Laris", "Sangat Laris"]
+        corrected_label_map = {
+            cid: custom_labels[i] if i < len(custom_labels) else f"Cluster {cid}"
+            for i, cid in enumerate(sorted_cluster_ids)
+        }
+
+    # Timpa kolom 'Kategori' di df_full agar sesuai dengan centroid yang benar
+    df_full['Kategori'] = df_full['Cluster'].map(corrected_label_map)
+    # =========================================================================
+
     summary = df_full.groupby('Kategori').agg(
         Jumlah_Barang=('Nama Barang', 'count'),
         Rata_Qty=('Qty_2022_2025', 'mean'),
@@ -60,15 +86,14 @@ def show():
 
     with col_kanan:
         st.markdown("<div class='section-title'>🎯 Posisi Centroid</div>", unsafe_allow_html=True)
-        inv_label_map = {v: k for k, v in label_map.items()}
+        inv_label_map = {v: k for k, v in corrected_label_map.items()}
         centroid_data = []
         
-        # Iterasi sesuai urutan summary untuk menampilkan nilai normalisasi centroid
+        # Iterasi sesuai urutan summary (terkecil ke terbesar)
         for _, row in summary.iterrows():
             kategori = row['Kategori']
             cid = inv_label_map.get(kategori)
             if cid is not None:
-                # Mengambil nilai mentah (ter-normalisasi) langsung dari model
                 centroid_val = model.cluster_centers_[cid][0]
                 centroid_data.append({
                     "Kategori": kategori, 
@@ -82,11 +107,12 @@ def show():
 
     with col_tabel:
         st.markdown("<div class='section-title'>📋 Tabel Hasil Pengelompokan</div>", unsafe_allow_html=True)
-        all_cats = ["Semua"] + list(df_clustered['Kategori'].unique())
+        all_cats = ["Semua"] + list(df_full['Kategori'].unique())
         selected_cat = st.selectbox("Filter Kategori:", all_cats, key="hasil_filter")
         df_show = df_full[['Nama Barang', 'Qty_2022_2025', 'Cluster', 'Kategori']].copy()
         df_show.rename(columns={'Qty_2022_2025': 'Total Qty (Asli)'}, inplace=True)
-        if selected_cat != "Semua": df_show = df_show[df_show['Kategori'] == selected_cat]
+        if selected_cat != "Semua": 
+            df_show = df_show[df_show['Kategori'] == selected_cat]
         
         st.dataframe(df_show.sort_values('Total Qty (Asli)', ascending=False).reset_index(drop=True), use_container_width=True, height=400)
         st.caption(f"Menampilkan {len(df_show):,} barang")
@@ -101,7 +127,7 @@ def show():
             "Sangat Rendah": ["Evaluasi produk dengan tingkat penjualan terendah.", "Pertimbangkan pemberian diskon/promosi.", "Kurangi pengadaan stok."]
         }
         
-        inv_label_map = {v: k for k, v in label_map.items()}
+        inv_label_map = {v: k for k, v in corrected_label_map.items()}
         for _, row in summary.sort_values('Rata_Qty', ascending=False).iterrows():
             kategori = row['Kategori']
             c = get_color(kategori)
