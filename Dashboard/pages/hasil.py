@@ -35,14 +35,18 @@ def show():
     # Penggabungan data awal
     df_full = df_clustered.merge(df_agg, on='Nama Barang', suffixes=('_norm', ''))
 
+    # =========================================================================
     # MAP CLUSTER ID KE KATEGORI
+    # =========================================================================
     corrected_label_map = {
         0: "Kurang Laris",
-        1: "Laris",
-        2: "Sedang"
+        2: "Sedang",
+        1: "Laris"
     }
 
+    # Tetapkan kolom Kategori ke DataFrame utama
     df_full['Kategori'] = df_full['Cluster'].map(corrected_label_map)
+    # =========================================================================
 
     summary = df_full.groupby('Kategori').agg(
         Jumlah_Barang=('Nama Barang', 'count'),
@@ -51,6 +55,7 @@ def show():
         Max_Qty=('Qty_2022_2025', 'max'),
     ).reset_index().sort_values('Rata_Qty')
 
+    # Warna dinamis berdasarkan kategori
     def get_color(kategori):
         if kategori in ["Sangat Laris", "Laris"]: return "#27ae60"
         if kategori == "Sedang": return "#f39c12"
@@ -75,6 +80,7 @@ def show():
     with col_kanan:
         st.markdown("<div class='section-title'>🎯 Posisi Centroid</div>", unsafe_allow_html=True)
         
+        # Urutan dipasangkan langsung antara Cluster ID dan Label
         centroid_order = [
             (0, "Kurang Laris"),
             (2, "Sedang"),
@@ -108,6 +114,9 @@ def show():
         st.dataframe(df_show.sort_values('Total Qty (Asli)', ascending=False).reset_index(drop=True), use_container_width=True, height=400)
         st.caption(f"Menampilkan {len(df_show):,} barang")
 
+    # =========================================================================
+    # PERBAIKAN BAGIAN REKOMENDASI (Sesuai Urutan: Laris -> Sedang -> Kurang Laris)
+    # =========================================================================
     with col_rek:
         st.markdown("<div class='section-title'>📝 Rekomendasi/Strategi</div>", unsafe_allow_html=True)
         REKOMENDASI = {
@@ -118,37 +127,38 @@ def show():
             "Sangat Rendah": ["Evaluasi produk dengan tingkat penjualan terendah.", "Pertimbangkan pemberian diskon/promosi.", "Kurangi pengadaan stok."]
         }
         
-        custom_rec_order = ["Sangat Laris", "Laris", "Sedang", "Kurang Laris", "Sangat Rendah"]
-        summary_rec = summary.copy()
-        summary_rec['Kategori'] = pd.Categorical(summary_rec['Kategori'], categories=custom_rec_order, ordered=True)
-        summary_rec = summary_rec.sort_values('Kategori').reset_index(drop=True)
-
+        # Penutupan urutan eksplisit agar kartu tampil urut tinggi -> rendah
+        rec_order_list = ["Laris", "Sedang", "Kurang Laris"]
         inv_label_map = {v: k for k, v in corrected_label_map.items()}
-        for _, row in summary_rec.iterrows():
-            kategori = row['Kategori']
-            c = get_color(kategori)
-            cluster_id = inv_label_map.get(kategori, "?")
-            poin = REKOMENDASI.get(kategori, ["Pantau perkembangan berkala."])
-            list_html = "".join([f"<li style='margin-bottom:4px; color:#000000;'>{p}</li>" for p in poin])
-            
-            st.markdown(f"""
-            <div style='background:#ffffff; border-left:4px solid {c}; border-radius:10px; padding:14px 18px; margin-bottom:12px;'>
-                <div style='display: flex; justify-content: space-between; align-items: center;'>
-                    <div style='font-weight:700; color:{c}; font-size:1rem;'>{kategori}</div>
-                    <div style='background:{c}; color:white; padding:2px 8px; border-radius:10px; font-size:0.75rem; font-weight:bold;'>
-                        Cluster {cluster_id}
+
+        for kategori in rec_order_list:
+            if kategori in df_full['Kategori'].values:
+                c = get_color(kategori)
+                cluster_id = inv_label_map.get(kategori, "?")
+                poin = REKOMENDASI.get(kategori, ["Pantau perkembangan berkala."])
+                list_html = "".join([f"<li style='margin-bottom:4px; color:#000000;'>{p}</li>" for p in poin])
+                
+                st.markdown(f"""
+                <div style='background:#ffffff; border-left:4px solid {c}; border-radius:10px; padding:14px 18px; margin-bottom:12px;'>
+                    <div style='display: flex; justify-content: space-between; align-items: center;'>
+                        <div style='font-weight:700; color:{c}; font-size:1rem;'>{kategori}</div>
+                        <div style='background:{c}; color:white; padding:2px 8px; border-radius:10px; font-size:0.75rem; font-weight:bold;'>
+                            Cluster {cluster_id}
+                        </div>
+                    </div>
+                    <div style='color:#000000; font-size:0.85rem; margin-top:8px;'>
+                        <ul style='margin:6px 0 0 18px; padding:0;'>{list_html}</ul>
                     </div>
                 </div>
-                <div style='color:#000000; font-size:0.85rem; margin-top:8px;'>
-                    <ul style='margin:6px 0 0 18px; padding:0;'>{list_html}</ul>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
+                """, unsafe_allow_html=True)
 
+    # =========================================================================
     # 5. JARAK EUCLIDEAN KE CENTROID
+    # =========================================================================
     st.markdown("---")
     st.markdown("<div class='section-title'>📐 Jarak Euclidean ke Centroid</div>", unsafe_allow_html=True)
     
+    # Ambil kolom angka ter-normalisasi
     num_cols = df_clustered.select_dtypes(include=[np.number]).columns.tolist()
     num_cols = [c for c in num_cols if c not in ['Cluster', 'Kategori']]
     X_vals = df_clustered[[num_cols[0]]].values.flatten()
