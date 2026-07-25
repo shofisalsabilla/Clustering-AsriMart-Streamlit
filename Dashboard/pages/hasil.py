@@ -36,16 +36,23 @@ def show():
     df_full = df_clustered.merge(df_agg, on='Nama Barang', suffixes=('_norm', ''))
 
     # =========================================================================
-    # MAP CLUSTER ID KE KATEGORI
+    # OTOMATISASI MAPPING CLUSTER BERDASARKAN CENTROID (SOLUSI KEBALIK)
     # =========================================================================
-    corrected_label_map = {
-        0: "Kurang Laris",
-        2: "Sedang",
-        1: "Laris"
+    # Mengambil centroid asli dari model
+    centroids = model.cluster_centers_.flatten()
+    
+    # Urutkan cluster ID dari centroid nilai terkecil ke terbesar
+    sorted_cluster_ids = np.argsort(centroids)
+    
+    # Petakan otomatis: nilai terkecil -> Kurang Laris, tengah -> Sedang, terbesar -> Laris
+    auto_label_map = {
+        sorted_cluster_ids[0]: "Kurang Laris",
+        sorted_cluster_ids[1]: "Sedang",
+        sorted_cluster_ids[2]: "Laris"
     }
 
     # Tetapkan kolom Kategori ke DataFrame utama
-    df_full['Kategori'] = df_full['Cluster'].map(corrected_label_map)
+    df_full['Kategori'] = df_full['Cluster'].map(auto_label_map)
     # =========================================================================
 
     summary = df_full.groupby('Kategori').agg(
@@ -80,11 +87,11 @@ def show():
     with col_kanan:
         st.markdown("<div class='section-title'>🎯 Posisi Centroid</div>", unsafe_allow_html=True)
         
-        # Urutan dipasangkan langsung antara Cluster ID dan Label
+        # Mengurutkan Tampilan Centroid (Kurang Laris -> Sedang -> Laris)
         centroid_order = [
-            (0, "Kurang Laris"),
-            (2, "Sedang"),
-            (1, "Laris")
+            (sorted_cluster_ids[0], "Kurang Laris"),
+            (sorted_cluster_ids[1], "Sedang"),
+            (sorted_cluster_ids[2], "Laris")
         ]
         
         centroid_data = []
@@ -114,9 +121,7 @@ def show():
         st.dataframe(df_show.sort_values('Total Qty (Asli)', ascending=False).reset_index(drop=True), use_container_width=True, height=400)
         st.caption(f"Menampilkan {len(df_show):,} barang")
 
-    # =========================================================================
-    # PERBAIKAN BAGIAN REKOMENDASI (Sesuai Urutan: Laris -> Sedang -> Kurang Laris)
-    # =========================================================================
+    # Rekomendasi/Strategi (Mengikuti auto_label_map)
     with col_rek:
         st.markdown("<div class='section-title'>📝 Rekomendasi/Strategi</div>", unsafe_allow_html=True)
         REKOMENDASI = {
@@ -127,9 +132,8 @@ def show():
             "Sangat Rendah": ["Evaluasi produk dengan tingkat penjualan terendah.", "Pertimbangkan pemberian diskon/promosi.", "Kurangi pengadaan stok."]
         }
         
-        # Penutupan urutan eksplisit agar kartu tampil urut tinggi -> rendah
         rec_order_list = ["Laris", "Sedang", "Kurang Laris"]
-        inv_label_map = {v: k for k, v in corrected_label_map.items()}
+        inv_label_map = {v: k for k, v in auto_label_map.items()}
 
         for kategori in rec_order_list:
             if kategori in df_full['Kategori'].values:
@@ -152,13 +156,10 @@ def show():
                 </div>
                 """, unsafe_allow_html=True)
 
-    # =========================================================================
     # 5. JARAK EUCLIDEAN KE CENTROID
-    # =========================================================================
     st.markdown("---")
     st.markdown("<div class='section-title'>📐 Jarak Euclidean ke Centroid</div>", unsafe_allow_html=True)
     
-    # Ambil kolom angka ter-normalisasi
     num_cols = df_clustered.select_dtypes(include=[np.number]).columns.tolist()
     num_cols = [c for c in num_cols if c not in ['Cluster', 'Kategori']]
     X_vals = df_clustered[[num_cols[0]]].values.flatten()
@@ -166,9 +167,9 @@ def show():
     df_dist_display = pd.DataFrame({'Nama Barang': df_clustered['Nama Barang']})
     
     target_order = [
-        (0, "Kurang Laris"),
-        (2, "Sedang"),
-        (1, "Laris")
+        (sorted_cluster_ids[0], "Kurang Laris"),
+        (sorted_cluster_ids[1], "Sedang"),
+        (sorted_cluster_ids[2], "Laris")
     ]
     
     for cid, label in target_order:
