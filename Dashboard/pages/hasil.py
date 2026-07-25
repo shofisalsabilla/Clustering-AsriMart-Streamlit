@@ -36,15 +36,15 @@ def show():
     df_full = df_clustered.merge(df_agg, on='Nama Barang', suffixes=('_norm', ''))
 
     # =========================================================================
-    # MAP CLUSTER ID KE KATEGORI (DISESUAIKAN DENGAN TOTAL QTY TERGABUNG)
-    # Cluster 0 = Kurang Laris
-    # Cluster 1 = Sedang
-    # Cluster 2 = Laris (Total Qty Paling Tinggi hingga 33.000)
+    # MAP CLUSTER ID KE KATEGORI (KONSISTEN BERDASARKAN NILAI CENTROID ASLI)
+    # Cluster 0 = Kurang Laris (~0.0649)
+    # Cluster 2 = Sedang        (~0.2249)
+    # Cluster 1 = Laris         (~0.5716)
     # =========================================================================
     corrected_label_map = {
         0: "Kurang Laris",
-        1: "Sedang",
-        2: "Laris"
+        2: "Sedang",
+        1: "Laris"
     }
 
     # Tetapkan kolom Kategori ke DataFrame utama
@@ -84,13 +84,13 @@ def show():
         st.markdown("<div class='section-title'>🎯 Posisi Centroid</div>", unsafe_allow_html=True)
         
         # Urutan ID cluster sesuai dengan label mapping yang benar:
-        # Cluster 0 = Kurang Laris
-        # Cluster 1 = Sedang
-        # Cluster 2 = Laris
+        # Cluster 0 = Kurang Laris (~0.0649)
+        # Cluster 2 = Sedang        (~0.2249)
+        # Cluster 1 = Laris         (~0.5716)
         centroid_order = [
             (0, "Kurang Laris"),
-            (1, "Sedang"),
-            (2, "Laris")
+            (2, "Sedang"),
+            (1, "Laris")
         ]
         
         centroid_data = []
@@ -170,19 +170,20 @@ def show():
 
     df_dist_display = pd.DataFrame({'Nama Barang': df_clustered['Nama Barang']})
     
-    # Hitung jarak Euclidean sesuai urutan yang tepat: Kurang Laris (0), Sedang (1), Laris (2)
+    # Urutan kolom disesuaikan persis seperti di gambar: Kurang Laris (0), Laris (1), Sedang (2)
     target_order = [
         (0, "Kurang Laris"),
-        (1, "Sedang"),
-        (2, "Laris")
+        (1, "Laris"),
+        (2, "Sedang")
     ]
     
     for cid, label in target_order:
         centroid_val = model.cluster_centers_[cid][0]
         dist_to_centroid = np.abs(X_vals - centroid_val)
-        df_dist_display[f"Jarak ke Centroid ({label})"] = np.round(dist_to_centroid, 4)
+        # Format desimal terkunci di 4 angka di belakang koma
+        df_dist_display[f"Jarak ke Centroid ({label})"] = [f"{v:.4f}" for v in dist_to_centroid]
 
-    st.dataframe(df_dist_display.head(50), use_container_width=True)
+    st.dataframe(df_dist_display, use_container_width=True)
 
     st.markdown("---")
     csv = df_full[['Nama Barang', 'Qty_2022_2025', 'Kategori']].to_csv(index=False).encode('utf-8')
