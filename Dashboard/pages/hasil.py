@@ -123,16 +123,11 @@ def show():
         summary_rec['Kategori'] = pd.Categorical(summary_rec['Kategori'], categories=custom_rec_order, ordered=True)
         summary_rec = summary_rec.sort_values('Kategori').reset_index(drop=True)
 
-        rec_cluster_map = {
-            "Laris": 1,
-            "Sedang": 2,
-            "Kurang Laris": 0
-        }
-
+        inv_label_map = {v: k for k, v in corrected_label_map.items()}
         for _, row in summary_rec.iterrows():
             kategori = row['Kategori']
             c = get_color(kategori)
-            cluster_id = rec_cluster_map.get(kategori, "?")
+            cluster_id = inv_label_map.get(kategori, "?")
             poin = REKOMENDASI.get(kategori, ["Pantau perkembangan berkala."])
             list_html = "".join([f"<li style='margin-bottom:4px; color:#000000;'>{p}</li>" for p in poin])
             
