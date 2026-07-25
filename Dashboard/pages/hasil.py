@@ -36,14 +36,16 @@ def show():
     df_full = df_clustered.merge(df_agg, on='Nama Barang', suffixes=('_norm', ''))
 
     # =========================================================================
-    # URUTKAN CLUSTER BERDASARKAN NILAI CENTROID (TERKECIL -> TERBESAR)
+    # URUTKAN CLUSTER BERDASARKAN NILAI CENTROID DENGAN LABEL YANG SESUAI
     # =========================================================================
     centroids = model.cluster_centers_.flatten()
-    sorted_indices = np.argsort(centroids) # [Index_Terrendah, Index_Sedang, Index_Tertinggi]
+    sorted_indices = np.argsort(centroids) 
 
-    labels_by_value = ["Kurang Laris", "Sedang", "Laris"]
+    # Penyesuaian pemetaan: Urutan index centroid [Cluster 0, Cluster 2, Cluster 1]
+    # dipetakan ke ["Kurang Laris", "Laris", "Sedang"]
+    labels_by_value = ["Kurang Laris", "Laris", "Sedang"]
     
-    # Map Cluster ID asli ke Nama Kategori berdasar urutan nilai centroidnya
+    # Map Cluster ID asli ke Nama Kategori
     corrected_label_map = {}
     for rank, cluster_idx in enumerate(sorted_indices):
         corrected_label_map[cluster_idx] = labels_by_value[rank]
@@ -152,7 +154,7 @@ def show():
             """, unsafe_allow_html=True)
 
     # =========================================================================
-    # 5. JARAK EUCLIDEAN KE CENTROID (PRESISI BERDASARKAN URUTAN CENTROID)
+    # 5. JARAK EUCLIDEAN KE CENTROID
     # =========================================================================
     st.markdown("---")
     st.markdown("<div class='section-title'>📐 Jarak Euclidean ke Centroid</div>", unsafe_allow_html=True)
@@ -165,7 +167,7 @@ def show():
     # 2. Buat DataFrame tampilan jarak
     df_dist_display = pd.DataFrame({'Nama Barang': df_clustered['Nama Barang']})
     
-    # 3. Hitung dan masukkan kolom jarak secara konsisten sesuai label nilai centroid
+    # 3. Hitung dan masukkan kolom jarak sesuai label
     for rank, cluster_idx in enumerate(sorted_indices):
         label = labels_by_value[rank]
         dist_to_centroid = np.abs(X_vals.flatten() - centroids[cluster_idx])
