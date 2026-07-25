@@ -35,18 +35,17 @@ def show():
     df_full = df_clustered.merge(df_agg, on='Nama Barang', suffixes=('_norm', ''))
 
     # =========================================================================
-    # URUTKAN CLUSTER BERDASARKAN TOTAL PENJUALAN ASLI (KONSISTEN 100%)
+    # DETEKSI DAN URUTKAN BERDASARKAN NILAI CENTROID SEBENARNYA (100% AKURAT)
     # =========================================================================
     num_clusters = len(model.cluster_centers_)
     
-    # Hitung rata-rata Qty Penjualan Asli per Cluster ID
-    mean_qty_per_cluster = df_full.groupby('Cluster')['Qty_2022_2025'].mean().reset_index()
+    # Hitung nilai representative/rata-rata dari centroid tiap cluster (mendukung 1D/multidimensi)
+    centroid_means = model.cluster_centers_.mean(axis=1)
     
-    # Urutkan ID Cluster dari rata-rata penjualan TERKECIL -> TERBESAR
-    sorted_cluster_df = mean_qty_per_cluster.sort_values('Qty_2022_2025', ascending=True)
-    sorted_cluster_ids = sorted_cluster_df['Cluster'].tolist()
+    # Urutkan ID Cluster dari nilai Centroid TERKECIL -> TERBESAR
+    sorted_cluster_ids = np.argsort(centroid_means)
 
-    # Skema Label dari Penjualan TERKECIL -> TERBESAR
+    # Penentuan skema label dinamis dari TERKECIL -> TERBESAR
     if num_clusters == 2:
         labels = ["Kurang Laris", "Laris"]
     elif num_clusters == 3:
@@ -58,7 +57,7 @@ def show():
     else:
         labels = [f"Rank {i+1}" for i in range(num_clusters)]
 
-    # Mapping Presisi: Cluster ID -> Label Kategori
+    # Mapping konsisten: Cluster ID K-Means -> Label Kategori & Centroid
     label_map = {}
     centroid_order = []
     custom_cluster_badge = {}
@@ -69,10 +68,10 @@ def show():
         centroid_order.append((int(cid), lbl))
         custom_cluster_badge[lbl] = int(cid)
 
-    # Tetapkan kolom Kategori resmi ke DataFrame
+    # Tetapkan kolom Kategori ke DataFrame utama
     df_full['Kategori'] = df_full['Cluster'].map(label_map).fillna("Lainnya")
 
-    # Urutan tampilan filter & rekomendasi: SELALU DARI PENJUALAN TERTINGGI KE TERENDAH
+    # Urutan filter & rekomendasi dari TERBESAR -> TERKECIL (Laris ke Rendah)
     active_labels_desc = [label_map[int(cid)] for cid in reversed(sorted_cluster_ids)]
     list_pilihan = ["Semua"] + active_labels_desc
     rec_order_list = active_labels_desc
@@ -130,17 +129,18 @@ def show():
     with col_tabel:
         st.markdown("<div class='section-title'>📋 Tabel Hasil Pengelompokan</div>", unsafe_allow_html=True)
         
-        df_show = df_full[['Nama Barang', 'Qty_2022_2025', 'Cluster', 'Kategori']].copy()
+        df_show = df_full[['Nama Barang', 'Qty_2022_2025', 'Cluster']].copy()
         df_show.rename(columns={'Qty_2022_2025': 'Total Qty (Asli)'}, inplace=True)
+        
+        df_show['Kategori'] = df_show['Cluster'].map(label_map).fillna("Lainnya")
         
         selected_cat = st.selectbox("Filter Kategori:", list_pilihan, key="hasil_filter")
         
         if selected_cat != "Semua": 
             df_show = df_show[df_show['Kategori'] == selected_cat]
         
-        # Tampilkan tabel yang disortir dari Total Qty tertinggi ke terendah
         st.dataframe(
-            df_show[['Nama Barang', 'Total Qty (Asli)', 'Kategori', 'Cluster']].sort_values('Total Qty (Asli)', ascending=False).reset_index(drop=True), 
+            df_show.sort_values('Total Qty (Asli)', ascending=False).reset_index(drop=True), 
             use_container_width=True, 
             height=400
         )
@@ -159,7 +159,6 @@ def show():
             "Sangat Rendah": ["Evaluasi produk dengan tingkat penjualan terendah.", "Pertimbangkan pemberian diskon/promosi.", "Kurangi pengadaan stok."]
         }
 
-        # Menampilkan rekomendasi berurutan dari Kategori Tertinggi ke Terendah
         for kategori in rec_order_list:
             if kategori in df_full['Kategori'].values:
                 c = get_color(kategori)
@@ -193,7 +192,7 @@ def show():
 
     df_dist_display = pd.DataFrame({'Nama Barang': df_clustered['Nama Barang']})
     
-    # Hitung Jarak Euclidean presisi sesuai urutan label dari terendah ke tertinggi
+    # Hitung Jarak Euclidean presisi ke masing-masing centroid terurut
     for cid, label in centroid_order:
         centroid_val = model.cluster_centers_[cid]
         dists = np.linalg.norm(X_vals - centroid_val, axis=1)
