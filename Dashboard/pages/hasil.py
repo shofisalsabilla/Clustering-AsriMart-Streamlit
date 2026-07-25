@@ -31,12 +31,12 @@ def show():
     df_full = df_clustered.merge(df_agg, on='Nama Barang', suffixes=('_norm', ''))
 
     # =========================================================================
-    # PERBAIKAN LOGIKA: Mapping Label Otomatis Berdasarkan Nilai Centroid
+    # LOGIKA PEMETAAN LABEL DINAMIS & OTOMATIS BERDASARKAN NILAI CENTROID
     # =========================================================================
     centroids = model.cluster_centers_.flatten()
-    sorted_cluster_ids = np.argsort(centroids) # Urutkan dari centroid terkecil ke terbesar
+    sorted_cluster_ids = np.argsort(centroids)  # Urutkan index dari centroid terkecil ke terbesar
 
-    # Menyesuaikan label sesuai jumlah cluster (K=3)
+    # Menyesuaikan label berdasarkan urutan nilai centroid (K=3)
     if len(centroids) == 3:
         corrected_label_map = {
             sorted_cluster_ids[0]: "Kurang Laris", # Centroid Terendah
@@ -44,14 +44,14 @@ def show():
             sorted_cluster_ids[2]: "Laris"         # Centroid Tertinggi
         }
     else:
-        # Cadangan jika K != 3
+        # Cadangan jika nilai K selain 3
         custom_labels = ["Sangat Rendah", "Kurang Laris", "Sedang", "Laris", "Sangat Laris"]
         corrected_label_map = {
             cid: custom_labels[i] if i < len(custom_labels) else f"Cluster {cid}"
             for i, cid in enumerate(sorted_cluster_ids)
         }
 
-    # Timpa kolom 'Kategori' di df_full agar sesuai dengan centroid yang benar
+    # Perbarui kolom Kategori di df_full sesuai pemetaan yang benar
     df_full['Kategori'] = df_full['Cluster'].map(corrected_label_map)
     # =========================================================================
 
@@ -89,7 +89,7 @@ def show():
         inv_label_map = {v: k for k, v in corrected_label_map.items()}
         centroid_data = []
         
-        # Iterasi sesuai urutan summary (terkecil ke terbesar)
+        # Mengambil data centroid tiap kategori
         for _, row in summary.iterrows():
             kategori = row['Kategori']
             cid = inv_label_map.get(kategori)
@@ -99,7 +99,14 @@ def show():
                     "Kategori": kategori, 
                     "Centroid": f"[{centroid_val:.8f}]"
                 })
-        st.table(pd.DataFrame(centroid_data))
+        
+        # Membuat DataFrame dan mengurutkan secara eksplisit agar "Sedang" ada di tengah
+        df_centroid_display = pd.DataFrame(centroid_data)
+        custom_order = ["Kurang Laris", "Sedang", "Laris"]
+        df_centroid_display['Kategori'] = pd.Categorical(df_centroid_display['Kategori'], categories=custom_order, ordered=True)
+        df_centroid_display = df_centroid_display.sort_values('Kategori').reset_index(drop=True)
+
+        st.table(df_centroid_display)
 
     # 3 & 4. Tabel Hasil & Rekomendasi
     st.markdown("---")
