@@ -125,6 +125,27 @@ def show():
         df_centroid_display = pd.DataFrame(centroid_data)
         st.table(df_centroid_display)
 
+    
+    # =========================================================================
+    # 5. JARAK EUCLIDEAN KE CENTROID
+    # =========================================================================
+    st.markdown("---")
+    st.markdown("<div class='section-title'>📐 Jarak Euclidean ke Centroid</div>", unsafe_allow_html=True)
+    
+    num_cols = df_clustered.select_dtypes(include=[np.number]).columns.tolist()
+    num_cols = [c for c in num_cols if c not in ['Cluster', 'Kategori']]
+    X_vals = df_clustered[num_cols].values
+
+    df_dist_display = pd.DataFrame({'Nama Barang': df_clustered['Nama Barang']})
+    
+    # Hitung Jarak Euclidean presisi menggunakan centroid_order yang berbasis skala model
+    for cid, label in centroid_order:
+        centroid_val = model.cluster_centers_[cid]
+        dists = np.linalg.norm(X_vals - centroid_val, axis=1)
+        df_dist_display[f"Jarak ke Centroid ({label})"] = [f"{v:.4f}" for v in dists]
+
+    st.dataframe(df_dist_display, use_container_width=True)
+
     # 3 & 4. Tabel Hasil & Rekomendasi
     st.markdown("---")
     col_tabel, col_rek = st.columns([2, 1])
@@ -184,25 +205,6 @@ def show():
                 </div>
                 """, unsafe_allow_html=True)
 
-    # =========================================================================
-    # 5. JARAK EUCLIDEAN KE CENTROID
-    # =========================================================================
-    st.markdown("---")
-    st.markdown("<div class='section-title'>📐 Jarak Euclidean ke Centroid</div>", unsafe_allow_html=True)
-    
-    num_cols = df_clustered.select_dtypes(include=[np.number]).columns.tolist()
-    num_cols = [c for c in num_cols if c not in ['Cluster', 'Kategori']]
-    X_vals = df_clustered[num_cols].values
-
-    df_dist_display = pd.DataFrame({'Nama Barang': df_clustered['Nama Barang']})
-    
-    # Hitung Jarak Euclidean presisi menggunakan centroid_order yang berbasis skala model
-    for cid, label in centroid_order:
-        centroid_val = model.cluster_centers_[cid]
-        dists = np.linalg.norm(X_vals - centroid_val, axis=1)
-        df_dist_display[f"Jarak ke Centroid ({label})"] = [f"{v:.4f}" for v in dists]
-
-    st.dataframe(df_dist_display, use_container_width=True)
 
     st.markdown("---")
     csv = df_full[['Nama Barang', 'Qty_2022_2025', 'Kategori']].to_csv(index=False).encode('utf-8')
