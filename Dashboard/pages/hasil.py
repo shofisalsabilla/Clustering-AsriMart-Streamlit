@@ -36,10 +36,10 @@ def show():
     df_full = df_clustered.merge(df_agg, on='Nama Barang', suffixes=('_norm', ''))
 
     # =========================================================================
-    # MAP CLUSTER ID KE KATEGORI (DISESUAIKAN DENGAN HASIL TABEL PENGELOMPOKAN)
+    # MAP CLUSTER ID KE KATEGORI (DISESUAIKAN DENGAN HASIL ID CLUSTER)
     # Cluster 0 = Kurang Laris
     # Cluster 1 = Sedang
-    # Cluster 2 = Laris (Total Qty Terbesar)
+    # Cluster 2 = Laris
     # =========================================================================
     corrected_label_map = {
         0: "Kurang Laris",
@@ -83,7 +83,6 @@ def show():
     with col_kanan:
         st.markdown("<div class='section-title'>🎯 Posisi Centroid</div>", unsafe_allow_html=True)
         
-        # Urutan ID cluster sesuai pemetaan baru:
         centroid_order = [
             (0, "Kurang Laris"),
             (1, "Sedang"),
