@@ -47,7 +47,7 @@ def show():
     # 2. Input Label
     st.markdown("---")
     n_clusters = st.number_input(
-        "Masukkan nilai k (2-5):", 
+        "Masukkan nilai k ", 
         min_value=2, 
         max_value=5, 
         value=state.get("n_clusters") or 3
