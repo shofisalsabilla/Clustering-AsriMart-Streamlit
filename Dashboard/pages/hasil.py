@@ -36,22 +36,23 @@ def show():
     df_full = df_clustered.merge(df_agg, on='Nama Barang', suffixes=('_norm', ''))
 
     # =========================================================================
-    # OTOMATISASI MAPPING CLUSTER BERDASARKAN CENTROID (SOLUSI KEBALIK)
+    # OTOMATISASI MAPPING CLUSTER BERDASARKAN CENTROID (LANGSUNG DI AWAL)
     # =========================================================================
-    # Mengambil centroid asli dari model
+    # Ambil nilai centroid dari model
     centroids = model.cluster_centers_.flatten()
     
-    # Urutkan cluster ID dari centroid nilai terkecil ke terbesar
+    # Urutkan index cluster dari nilai centroid terkecil ke terbesar
     sorted_cluster_ids = np.argsort(centroids)
     
-    # Petakan otomatis: nilai terkecil -> Kurang Laris, tengah -> Sedang, terbesar -> Laris
+    # Mapping otomatis berdasarkan urutan centroid:
+    # Terkecil -> Kurang Laris, Tengah -> Sedang, Terbesar -> Laris
     auto_label_map = {
         sorted_cluster_ids[0]: "Kurang Laris",
         sorted_cluster_ids[1]: "Sedang",
         sorted_cluster_ids[2]: "Laris"
     }
 
-    # Tetapkan kolom Kategori ke DataFrame utama
+    # Terapkan Kategori ke DataFrame utama DARI AWAL
     df_full['Kategori'] = df_full['Cluster'].map(auto_label_map)
     # =========================================================================
 
@@ -87,7 +88,6 @@ def show():
     with col_kanan:
         st.markdown("<div class='section-title'>🎯 Posisi Centroid</div>", unsafe_allow_html=True)
         
-        # Mengurutkan Tampilan Centroid (Kurang Laris -> Sedang -> Laris)
         centroid_order = [
             (sorted_cluster_ids[0], "Kurang Laris"),
             (sorted_cluster_ids[1], "Sedang"),
@@ -121,7 +121,6 @@ def show():
         st.dataframe(df_show.sort_values('Total Qty (Asli)', ascending=False).reset_index(drop=True), use_container_width=True, height=400)
         st.caption(f"Menampilkan {len(df_show):,} barang")
 
-    # Rekomendasi/Strategi (Mengikuti auto_label_map)
     with col_rek:
         st.markdown("<div class='section-title'>📝 Rekomendasi/Strategi</div>", unsafe_allow_html=True)
         REKOMENDASI = {
