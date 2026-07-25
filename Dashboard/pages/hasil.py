@@ -108,36 +108,33 @@ def show():
     st.markdown("---")
     col_tabel, col_rek = st.columns([2, 1])
 
-    with col_tabel:
-        st.markdown("<div class='section-title'>📋 Tabel Hasil Pengelompokan</div>", unsafe_allow_html=True)
-        all_cats = ["Semua"] + list(df_full['Kategori'].unique())
-        selected_cat = st.selectbox("Filter Kategori:", all_cats, key="hasil_filter")
-        
-        df_show = df_full[['Nama Barang', 'Qty_2022_2025', 'Cluster', 'Kategori']].copy()
-        df_show.rename(columns={'Qty_2022_2025': 'Total Qty (Asli)'}, inplace=True)
-        
-        if selected_cat != "Semua": 
-            df_show = df_show[df_show['Kategori'] == selected_cat]
-        
-        st.dataframe(df_show.sort_values('Total Qty (Asli)', ascending=False).reset_index(drop=True), use_container_width=True, height=400)
-        st.caption(f"Menampilkan {len(df_show):,} barang")
-
+    # =========================================================================
+    # REKOMENDASI / STRATEGI (DIBALIK KHUSUS BAGIAN INI SAJA)
+    # =========================================================================
     with col_rek:
         st.markdown("<div class='section-title'>📝 Rekomendasi/Strategi</div>", unsafe_allow_html=True)
         REKOMENDASI = {
+            "Sangat Laris": ["Tingkatkan ketersediaan stok untuk menghindari kehabisan.", "Jadikan produk sebagai produk unggulan.", "Pertahankan strategi pemasaran yang efektif."],
             "Laris": ["Prioritaskan ketersediaan stok.", "Jadikan produk fokus pemasaran.", "Pertahankan kualitas produk dan layanan."],
             "Sedang": ["Pertahankan performa penjualan yang stabil.", "Lakukan promosi secara berkala.", "Pantau perkembangan permintaan pasar."],
-            "Kurang Laris": ["Tingkatkan promosi produk.", "Evaluasi strategi pemasaran.", "Pantau penjualan secara berkala."]
+            "Kurang Laris": ["Tingkatkan promosi produk.", "Evaluasi strategi pemasaran.", "Pantau penjualan secara berkala."],
+            "Sangat Rendah": ["Evaluasi produk dengan tingkat penjualan terendah.", "Pertimbangkan pemberian diskon/promosi.", "Kurangi pengadaan stok."]
         }
         
+        # Mapping khusus penanda Cluster ID khusus untuk tampilan kartu Rekomendasi
+        custom_cluster_badge = {
+            "Laris": 2,        # Diubah jadi Cluster 2
+            "Sedang": 1,       # Diubah jadi Cluster 1
+            "Kurang Laris": 0  # Tetap Cluster 0
+        }
+
         rec_order_list = ["Laris", "Sedang", "Kurang Laris"]
-        # Invert mapping: Kategori -> Cluster ID
-        inv_label_map = {v: k for k, v in auto_label_map.items()}
 
         for kategori in rec_order_list:
             if kategori in df_full['Kategori'].values:
                 c = get_color(kategori)
-                cluster_id = inv_label_map.get(kategori, "?")
+                # Ambil Cluster ID khusus dari custom_cluster_badge
+                cluster_id = custom_cluster_badge.get(kategori, "?")
                 poin = REKOMENDASI.get(kategori, ["Pantau perkembangan berkala."])
                 list_html = "".join([f"<li style='margin-bottom:4px; color:#000000;'>{p}</li>" for p in poin])
                 
