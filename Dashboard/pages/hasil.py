@@ -1,4 +1,40 @@
-# =========================================================================
+import streamlit as st
+import pandas as pd
+import numpy as np
+from datetime import datetime
+from utils import state
+
+def show():
+    state.init_state()
+
+    st.markdown("""
+    <div class='main-header'>
+        <h2 style='margin:0; color:white;'>📊 Hasil Clustering</h2>
+        <p style='margin:4px 0 0; color:#b0c4de; font-size:0.9rem;'>
+            Tabel pengelompokan barang, centroid, jarak Euclidean, dan laporan lengkap
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    if not state.get("cluster_done"):
+        st.warning("⚠️ Harap selesaikan **Konfigurasi Clustering** dan jalankan K-Means terlebih dahulu.")
+        return
+
+    # Mengambil data dari state
+    df_clustered = state.get("df_clustered").copy()
+    model        = state.get("kmeans_model")
+    df_agg       = state.get("df_agg").copy()
+
+    # Hapus kolom 'Kategori' bawaan jika ada agar tidak bentrok
+    if 'Kategori' in df_clustered.columns:
+        df_clustered.drop(columns=['Kategori'], inplace=True)
+    if 'Kategori' in df_agg.columns:
+        df_agg.drop(columns=['Kategori'], inplace=True)
+
+    # Penggabungan data awal
+    df_full = df_clustered.merge(df_agg, on='Nama Barang', suffixes=('_norm', ''))
+
+    # =========================================================================
     # DETEKSI DAN URUTKAN CLUSTER BERDASARKAN PENJUALAN ASLI (KONSISTEN 100%)
     # =========================================================================
     num_clusters = len(model.cluster_centers_)
