@@ -22,7 +22,7 @@ def show():
 
     # Mengambil data dari state
     df_clustered = state.get("df_clustered").copy()
-    df_distances = state.get("df_distances")
+    df_distances = state.get("df_distances").copy()
     model        = state.get("kmeans_model")
     df_agg       = state.get("df_agg").copy()
     scaler       = state.get("scaler") 
@@ -168,10 +168,38 @@ def show():
             </div>
             """, unsafe_allow_html=True)
 
-    # 5. Jarak Euclidean & Download
+    # =========================================================================
+    # 5. JARAK EUCLIDEAN KE CENTROID (DENGAN HEADER PERSESUAIAN KATEGORI)
+    # =========================================================================
     st.markdown("---")
     st.markdown("<div class='section-title'>📐 Jarak Euclidean ke Centroid</div>", unsafe_allow_html=True)
-    st.dataframe(df_distances.head(50), use_container_width=True)
+    
+    # Deteksi kolom jarak yang ada (misal: 'Jarak ke Centroid 1', dll) atau buat ulang jika kolom lama bernama angka
+    df_dist_display = df_distances.copy()
+    
+    # Pemetaan kolom jarak ke Kategori yang sesuai
+    distance_cols = [c for c in df_dist_display.columns if 'Jarak ke Centroid' in c or 'Centroid' in c]
+    
+    # Jika kolom berjumlah sama dengan Kategori yang terdaftar
+    if len(distance_cols) == len(sorted_cluster_ids):
+        rename_dict = {}
+        for idx, orig_col in enumerate(distance_cols):
+            # Sesuaikan dengan urutan cluster id yang sudah terurut
+            cluster_id = idx  # indeks awal cluster
+            kat_name = corrected_label_map.get(cluster_id, f"Cluster {cluster_id}")
+            rename_dict[orig_col] = f"Jarak ke Centroid ({kat_name})"
+        
+        df_dist_display.rename(columns=rename_dict, inplace=True)
+        
+        # Reorder kolom agar rapi: Nama Barang -> Kurang Laris -> Sedang -> Laris
+        desired_cols = ["Nama Barang"] + [f"Jarak ke Centroid ({cat})" for cat in ["Kurang Laris", "Sedang", "Laris"] if f"Jarak ke Centroid ({cat})" in df_dist_display.columns]
+        existing_cols = [c for c in desired_cols if c in df_dist_display.columns]
+        
+        # Kolom lainnya yang belum termasuk
+        other_cols = [c for c in df_dist_display.columns if c not in existing_cols]
+        df_dist_display = df_dist_display[existing_cols + other_cols]
+
+    st.dataframe(df_dist_display.head(50), use_container_width=True)
 
     st.markdown("---")
     csv = df_full[['Nama Barang', 'Qty_2022_2025', 'Kategori']].to_csv(index=False).encode('utf-8')
