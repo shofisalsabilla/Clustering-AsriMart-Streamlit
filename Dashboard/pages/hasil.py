@@ -169,35 +169,38 @@ def show():
             """, unsafe_allow_html=True)
 
     # =========================================================================
-    # 5. JARAK EUCLIDEAN KE CENTROID (DENGAN HEADER PERSESUAIAN KATEGORI)
+    # 5. JARAK EUCLIDEAN KE CENTROID (FIX PERBAIKAN PEMETAAN DARI CLUSTER ID)
     # =========================================================================
     st.markdown("---")
     st.markdown("<div class='section-title'>📐 Jarak Euclidean ke Centroid</div>", unsafe_allow_html=True)
     
-    # Deteksi kolom jarak yang ada (misal: 'Jarak ke Centroid 1', dll) atau buat ulang jika kolom lama bernama angka
     df_dist_display = df_distances.copy()
     
-    # Pemetaan kolom jarak ke Kategori yang sesuai
-    distance_cols = [c for c in df_dist_display.columns if 'Jarak ke Centroid' in c or 'Centroid' in c]
+    # Deteksi kolom jarak yang ada (misal: 'Jarak ke Centroid 1', 'Jarak ke Centroid 2', dll)
+    dist_cols = [c for c in df_dist_display.columns if c != "Nama Barang"]
     
-    # Jika kolom berjumlah sama dengan Kategori yang terdaftar
-    if len(distance_cols) == len(sorted_cluster_ids):
-        rename_dict = {}
-        for idx, orig_col in enumerate(distance_cols):
-            # Sesuaikan dengan urutan cluster id yang sudah terurut
-            cluster_id = idx  # indeks awal cluster
-            kat_name = corrected_label_map.get(cluster_id, f"Cluster {cluster_id}")
-            rename_dict[orig_col] = f"Jarak ke Centroid ({kat_name})"
-        
-        df_dist_display.rename(columns=rename_dict, inplace=True)
-        
-        # Reorder kolom agar rapi: Nama Barang -> Kurang Laris -> Sedang -> Laris
-        desired_cols = ["Nama Barang"] + [f"Jarak ke Centroid ({cat})" for cat in ["Kurang Laris", "Sedang", "Laris"] if f"Jarak ke Centroid ({cat})" in df_dist_display.columns]
-        existing_cols = [c for c in desired_cols if c in df_dist_display.columns]
-        
-        # Kolom lainnya yang belum termasuk
-        other_cols = [c for c in df_dist_display.columns if c not in existing_cols]
-        df_dist_display = df_dist_display[existing_cols + other_cols]
+    # Petakan ulang secara spesifik berdasarkan angka Cluster ID dari nama kolomnya (misal: angka 1 -> cluster index 0)
+    rename_dict = {}
+    for col in dist_cols:
+        # Cari angka di dalam nama kolom (misal: "Jarak ke Centroid 1" -> 1)
+        digits = [int(s) for s in col.split() if s.isdigit()]
+        if digits:
+            cluster_idx = digits[0] - 1  # Konversi ke index berbasis 0 (Cluster 0, 1, 2)
+            kat_name = corrected_label_map.get(cluster_idx, f"Cluster {cluster_idx}")
+            rename_dict[col] = f"Jarak ke Centroid ({kat_name})"
+
+    df_dist_display.rename(columns=rename_dict, inplace=True)
+
+    # Urutkan posisi kolom agar enak dibaca: Nama Barang -> Kurang Laris -> Sedang -> Laris
+    desired_order = ["Nama Barang"] + [
+        f"Jarak ke Centroid ({kat})" 
+        for kat in ["Kurang Laris", "Sedang", "Laris"] 
+        if f"Jarak ke Centroid ({kat})" in df_dist_display.columns
+    ]
+    
+    # Tampilkan sesuai order
+    cols_exist = [c for c in desired_order if c in df_dist_display.columns]
+    df_dist_display = df_dist_display[cols_exist]
 
     st.dataframe(df_dist_display.head(50), use_container_width=True)
 
