@@ -22,7 +22,7 @@ def show():
     with col1:
         df_raw = state.get("df_raw")
         val = len(df_raw) if df_raw is not None else 0
-        st.metric("📦 Total Transaksi", f"{val:,}" if val else "—", help="Jumlah baris data mentah")
+        st.metric("📦 Total Data Mentah", f"{val:,}" if val else "—", help="Jumlah baris data mentah")
     with col2:
         df_agg = state.get("df_agg")
         val = len(df_agg) if df_agg is not None else 0
