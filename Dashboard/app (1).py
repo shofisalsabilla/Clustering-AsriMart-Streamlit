@@ -1,4 +1,8 @@
 import streamlit as st
+import importlib
+import clustering  # nama file python Anda
+
+importlib.reload(clustering)  # Memaksa Python membaca ulang kode terbaru
 
 st.set_page_config(
     page_title="Sistem Clustering K-Means | Toko Asri Mart",
