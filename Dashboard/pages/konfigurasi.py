@@ -69,31 +69,36 @@ def show():
         with cols[i]:
             new_label_map[i] = st.text_input(f"Rank {i+1}:", value=default_labels[i], key=f"label_{n_clusters}_{i}")
 
-    # 3. Jalankan K-Means dengan Urutan yang Benar
+    # 3. Eksekusi K-Means
     if st.button("🚀 Jalankan K-Means", type="primary", use_container_width=True):
         try:
-            model, df_clustered, df_dist, sil, _ = clustering.run_kmeans(df_scaled, n_clusters, new_label_map)
+            model, df_clustered, df_dist, sil, centroids = clustering.run_kmeans(df_scaled, n_clusters, new_label_map)
             
-            # --- LOGIKA PENGURUTAN AGAR "LARIS" SELALU TERTINGGI ---
-            # Menghitung rata-rata Qty per cluster dan mengurutkannya
+            # Pengurutan agar cluster bernilai rata-rata terkecil mendapat label rank 1
             cluster_means = df_clustered.groupby('Cluster')['Qty_2022_2025'].mean().sort_values()
-            
-            # Membuat pemetaan cluster agar 0 = Qty terendah, dst.
             mapping = {old_id: new_id for new_id, (old_id, _) in enumerate(cluster_means.items())}
             
-            # Terapkan pemetaan ke dataframe
             df_clustered['Cluster'] = df_clustered['Cluster'].map(mapping)
-            
-            # Terapkan label user ke cluster yang sudah terurut
             df_clustered['Kategori'] = df_clustered['Cluster'].map(new_label_map)
-            # --------------------------------------------------------
             
+            # Simpan variabel ke session state
             state.set("kmeans_model", model)
             state.set("df_clustered", df_clustered)
             state.set("df_distances", df_dist)
             state.set("silhouette_score", sil)
             state.set("cluster_labels", new_label_map)
+            state.set("centroids", centroids)
             state.set("cluster_done", True)
-            st.success(f"✅ Berhasil! Hasil clustering telah diurutkan. Silhouette: {sil:.4f}")
+            
+            st.success(f"✅ Berhasil! Hasil clustering telah diproses. Silhouette Score: {sil:.4f}")
+            
+            # Tampilkan informasi Centroid Akhir
+            st.markdown("### 🎯 Posisi Centroid Akhir")
+            centroid_df = pd.DataFrame({
+                "Kategori": [new_label_map[i] for i in range(n_clusters)],
+                "Centroid (Scaled)": [c[0] for c in sorted(centroids, key=lambda x: x[0])]
+            })
+            st.table(centroid_df)
+
         except Exception as e:
-            st.error(f"Error: {e}")
+            st.error(f"Error saat menjalankan K-Means: {e}")
