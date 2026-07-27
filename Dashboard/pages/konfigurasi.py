@@ -1,4 +1,5 @@
 import streamlit as st
+import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib
 matplotlib.use("Agg")
@@ -44,7 +45,7 @@ def show():
         else:
             st.warning("Tekan tombol 'Hitung Elbow Method' untuk menampilkan grafik.")
 
-    # 2. Input Label
+    # 2. Input Label Kategori
     st.markdown("---")
     n_clusters = st.number_input(
         "Masukkan nilai k ", 
@@ -59,7 +60,7 @@ def show():
     elif n_clusters == 3:
         default_labels = ["Kurang Laris", "Sedang", "Laris"]
     elif n_clusters == 4:
-        default_labels = ["Kurang Laris", "Sedang", "Laris", "Sangat Laris"]
+        default_labels = ["Sangat Rendah", "Kurang Laris", "Sedang", "Laris"]
     else: 
         default_labels = ["Sangat Rendah", "Kurang Laris", "Sedang", "Laris", "Sangat Laris"]
     
@@ -69,12 +70,12 @@ def show():
         with cols[i]:
             new_label_map[i] = st.text_input(f"Rank {i+1}:", value=default_labels[i], key=f"label_{n_clusters}_{i}")
 
-    # 3. Eksekusi K-Means
+    # 3. Jalankan K-Means
     if st.button("🚀 Jalankan K-Means", type="primary", use_container_width=True):
         try:
             model, df_clustered, df_dist, sil, centroids = clustering.run_kmeans(df_scaled, n_clusters, new_label_map)
             
-            # Pengurutan agar cluster bernilai rata-rata terkecil mendapat label rank 1
+            # Pengurutan agar cluster dengan rata-rata Qty terendah mendapat urutan pertama
             cluster_means = df_clustered.groupby('Cluster')['Qty_2022_2025'].mean().sort_values()
             mapping = {old_id: new_id for new_id, (old_id, _) in enumerate(cluster_means.items())}
             
@@ -94,9 +95,10 @@ def show():
             
             # Tampilkan informasi Centroid Akhir
             st.markdown("### 🎯 Posisi Centroid Akhir")
+            sorted_centroids = sorted(centroids, key=lambda x: x[0])
             centroid_df = pd.DataFrame({
                 "Kategori": [new_label_map[i] for i in range(n_clusters)],
-                "Centroid (Scaled)": [c[0] for c in sorted(centroids, key=lambda x: x[0])]
+                "Centroid (Scaled)": [f"[{c[0]:.8f}]" for c in sorted_centroids]
             })
             st.table(centroid_df)
 
