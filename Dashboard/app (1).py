@@ -1,6 +1,4 @@
 import streamlit as st
-import importlib
-import clustering  # nama file python Anda
 
 importlib.reload(clustering)  # Memaksa Python membaca ulang kode terbaru
 
