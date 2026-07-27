@@ -7,7 +7,7 @@ from sklearn.metrics import silhouette_score
 def preprocess(df_raw):
     """
     Membersihkan data mentah, mengagregasi Qty per Nama Barang,
-    dan melakukan normalisasi MinMax.
+    dan melakukan normalisasi MinMax (0 - 1).
     """
     # 1. Seleksi Kolom Utama
     df_cleaned = df_raw[['Nama Barang', 'Qty']].copy()
@@ -42,27 +42,37 @@ def compute_elbow(df_scaled, k_max=10):
     X = df_scaled[['Qty_2022_2025_Scaled']].values
     wcss = []
     
-    # Batasi k_max agar tidak melebihi jumlah data
     max_k = min(k_max, len(X))
     
     for k in range(1, max_k + 1):
-        kmeans = KMeans(n_clusters=k, random_state=42, n_init=10)
+        kmeans = KMeans(
+            n_clusters=k, 
+            init='random',      # Disesuaikan agar sama dengan notebook
+            random_state=42,    # Samakan nilai seed ini dengan notebook
+            n_init=10
+        )
         kmeans.fit(X)
         wcss.append(kmeans.inertia_)
         
     return wcss
 
 
-def run_kmeans(df_scaled, n_clusters=3, label_map=None):
+def run_kmeans(df_scaled, n_clusters=3, label_map=None, random_state=42):
     """
-    Menjalankan K-Means Clustering, menghitung Silhouette Score, 
-    dan menghitung jarak Euclidean dari tiap titik ke centroid.
+    Menjalankan K-Means Clustering dengan inisialisasi acak, 
+    menghitung Silhouette Score, dan jarak Euclidean ke centroid.
     
-    Returns: (model, df_clustered, df_dist, silhouette_score, centroids)
+    Returns: (kmeans_model, df_clustered, df_dist, silhouette_score, centroids)
     """
     X = df_scaled[['Qty_2022_2025_Scaled']].values
     
-    kmeans = KMeans(n_clusters=n_clusters, random_state=42, n_init=10)
+    # Menggunakan init='random' seperti di notebook Anda
+    kmeans = KMeans(
+        n_clusters=n_clusters, 
+        init='random',          # Inisialisasi centroid secara acak
+        random_state=random_state, # Seed acak
+        n_init=10
+    )
     labels = kmeans.fit_predict(X)
     centroids = kmeans.cluster_centers_
     
